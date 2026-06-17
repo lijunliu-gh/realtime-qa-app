@@ -30,8 +30,8 @@
 
 ```ini
 # 必須
-AZURE_OPENAI_ENDPOINT=https://msfoundrylab.openai.azure.com
-AZURE_OPENAI_DEPLOYMENT=gpt-5.4
+AZURE_OPENAI_ENDPOINT=https://<your-resource>.openai.azure.com
+AZURE_OPENAI_DEPLOYMENT=<your-deployment-name>
 # API キーが有効なら入れる。Foundry で無効化されている場合は空にして Entra ID で認証する。
 AZURE_OPENAI_API_KEY=
 
