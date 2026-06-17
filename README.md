@@ -146,6 +146,7 @@ npm run dev
 - 喋ると左パネルに文字起こしが流れる
 - 約 8 秒静かにするか 8 行貯まると Foundry が要約を更新
 - 「🔍 抽出」を押すと質問を抽出 → 各質問について MCP で Learn を検索 → 引用付き回答が表示される
+- 「📄 エクスポート」を押すと Markdown 議事録（要約 + 文字起こし + Q&A + 引用）をダウンロード
 - **初回 Foundry 呼び出し時にブラウザでサインインが必要**（az login していない場合）
 
 ## ファイル構成
@@ -191,7 +192,7 @@ frontend/
 
 - [ ] Azure Speech SDK に切り替え（多言語 / 話者識別）
 - [ ] Redis SessionStore + 再接続復元 + 認証
-- [ ] 議事録エクスポート (Markdown/PDF)
+- [x] ~~議事録エクスポート (Markdown/PDF)~~ → v1.1.0 で Markdown エクスポート実装済み
 - [ ] 質問の増分抽出（毎回全文を投げない）
 - [ ] Azure Container Apps へデプロイ
 
