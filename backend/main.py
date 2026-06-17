@@ -2,10 +2,12 @@ import os
 import json
 import asyncio
 import logging
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from services.summarizer import SummarizerService
 from services.mcp_client import LearnMcpClient
@@ -359,3 +361,62 @@ async def _answer_question(
 @app.get("/health")
 async def health():
     return {"status": "ok", "sessions": len(sessions)}
+
+
+@app.get("/export/{session_id}")
+async def export_session(session_id: str):
+    """Export session as Markdown meeting notes."""
+    session = sessions.get(session_id)
+    if session is None:
+        return Response(
+            content="Session not found", status_code=404,
+            media_type="text/plain",
+        )
+
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    lines: list[str] = []
+    lines.append(f"# 議事録 — {now}\n")
+
+    # --- Summary ---
+    lines.append("## 要約\n")
+    if session.summary:
+        lines.append(session.summary + "\n")
+    else:
+        lines.append("_（要約なし）_\n")
+
+    # --- Transcript ---
+    lines.append("## 文字起こし\n")
+    if session.transcript_lines:
+        for ln in session.transcript_lines:
+            lines.append(f"- **{ln['speaker']}**: {ln['text']}")
+        lines.append("")
+    else:
+        lines.append("_（文字起こしなし）_\n")
+
+    # --- Q&A ---
+    if session.questions:
+        lines.append("## 質問 & 回答\n")
+        for i, q in enumerate(session.questions, 1):
+            lines.append(f"### Q{i}. {q}\n")
+            ans = session.answers.get(q)
+            if ans:
+                lines.append(f"{ans['answer']}\n")
+                if ans.get("citations"):
+                    lines.append("**参考リンク:**\n")
+                    for c in ans["citations"]:
+                        title = c.get("title", c.get("url", "link"))
+                        url = c.get("url", "")
+                        lines.append(f"- [{title}]({url})")
+                    lines.append("")
+            else:
+                lines.append("_（未回答）_\n")
+
+    md_content = "\n".join(lines)
+
+    return Response(
+        content=md_content,
+        media_type="text/markdown; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="meeting-notes-{session_id[:8]}.md"',
+        },
+    )

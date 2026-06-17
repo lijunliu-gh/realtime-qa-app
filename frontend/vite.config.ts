@@ -10,6 +10,9 @@ export default defineConfig({
         target: 'ws://localhost:8000',
         ws: true,
       },
+      '/export': {
+        target: 'http://localhost:8000',
+      },
     },
   },
 });

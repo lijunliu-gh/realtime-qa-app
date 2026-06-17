@@ -6,6 +6,7 @@ interface ControlBarProps {
   tokenCount: number;
   onStart: () => void;
   onStop: () => void;
+  onExport: () => void;
 }
 
 function ControlBar({
@@ -14,6 +15,7 @@ function ControlBar({
   tokenCount,
   onStart,
   onStop,
+  onExport,
 }: ControlBarProps) {
   return (
     <div className="control-bar">
@@ -29,6 +31,10 @@ function ControlBar({
             ■ 停止
           </button>
         )}
+
+        <button className="btn btn-export" onClick={onExport}>
+          📄 エクスポート
+        </button>
       </div>
 
       <div className="control-bar-center">

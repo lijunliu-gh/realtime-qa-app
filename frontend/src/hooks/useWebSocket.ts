@@ -46,12 +46,12 @@ interface WebSocketHookOptions {
 export function useWebSocket(options: WebSocketHookOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const sessionIdRef = useRef(crypto.randomUUID());
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
   useEffect(() => {
-    const sessionId = crypto.randomUUID();
-    const wsUrl = resolveWsUrl(sessionId);
+    const wsUrl = resolveWsUrl(sessionIdRef.current);
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -104,5 +104,5 @@ export function useWebSocket(options: WebSocketHookOptions) {
     }
   }, []);
 
-  return { sendMessage, isConnected };
+  return { sendMessage, isConnected, sessionId: sessionIdRef.current };
 }

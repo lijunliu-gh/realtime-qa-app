@@ -45,6 +45,11 @@
   color: #fff;
 }
 
+.btn-export {
+  background: var(--accent-blue);
+  color: #fff;
+}
+
 .control-info {
   font-size: 0.8rem;
   color: var(--text-secondary);

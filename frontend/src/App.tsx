@@ -27,7 +27,7 @@ function App() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [tokenCount, setTokenCount] = useState(0);
 
-  const { sendMessage, isConnected } = useWebSocket({
+  const { sendMessage, isConnected, sessionId } = useWebSocket({
     onTranscriptAppend: (line) =>
       setTranscriptLines((prev) => [...prev, line]),
     onTranscriptSnapshot: (lines) => setTranscriptLines(lines),
@@ -83,6 +83,10 @@ function App() {
     sendMessage({ type: 'request_questions' });
   };
 
+  const handleExport = () => {
+    window.open(`/export/${sessionId}`, '_blank');
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -96,6 +100,7 @@ function App() {
         tokenCount={tokenCount}
         onStart={handleStart}
         onStop={handleStop}
+        onExport={handleExport}
       />
 
       <main className="panels">
