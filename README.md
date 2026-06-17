@@ -1,21 +1,82 @@
-# RealtimeQA - リアルタイム技術QA + 議事録作成 Web アプリ
+# RealtimeQA
 
-## 機能 (MVP)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-- **① 文字起こし**: ブラウザのマイクからリアルタイムで音声を文字に変換 (Web Speech API, Chrome)
-- **② 会話要約**: Azure Foundry (Azure OpenAI v1) で会話を自動要約 (rolling summary)
-- **③ 質問抽出 + 回答**: 会話から質問を抽出し、**Microsoft Learn MCP** で公式ドキュメントを検索した上で、引用付きの回答案を Foundry が生成
+> Real-time technical Q&A and meeting-notes web app — transcribe speech, summarize conversations, and answer questions with cited Microsoft Learn docs.
 
-## アーキテクチャ
+リアルタイム技術QA + 議事録作成 Web アプリ
 
+## Features / 機能 (MVP)
+
+| # | Feature | Tech |
+|---|---------|------|
+| ① | **Live Transcription** — 音声をリアルタイムで文字起こし | Web Speech API (Chrome) |
+| ② | **Rolling Summary** — 会話を自動要約 | Azure Foundry (GPT) |
+| ③ | **Q&A with Citations** — 質問を抽出し引用付き回答を生成 | Foundry + Microsoft Learn MCP |
+
+## Architecture / アーキテクチャ
+
+```mermaid
+flowchart LR
+    subgraph Browser["🖥️ Browser (Chrome)"]
+        MIC["🎤 Microphone"]
+        WSA["Web Speech API"]
+        UI["React UI<br/>(Transcript / Summary / Q&A)"]
+    end
+
+    subgraph Backend["⚙️ FastAPI Backend"]
+        WS["WebSocket Hub"]
+        SUM["Summarizer"]
+        QA["Q&A Pipeline"]
+    end
+
+    subgraph Cloud["☁️ Azure / Microsoft"]
+        FOUNDRY["Azure Foundry<br/>(GPT model)"]
+        MCP["Microsoft Learn MCP<br/>learn.microsoft.com/api/mcp"]
+    end
+
+    MIC -->|audio stream| WSA
+    WSA -->|text| UI
+    UI -->|WebSocket: transcript| WS
+    WS --> SUM
+    WS --> QA
+    SUM -->|prompt| FOUNDRY
+    FOUNDRY -->|summary| SUM
+    QA -->|search query| MCP
+    MCP -->|doc snippets| QA
+    QA -->|prompt + context| FOUNDRY
+    FOUNDRY -->|answer + citations| QA
+    SUM -->|WebSocket: summary_update| UI
+    QA -->|WebSocket: answer_update| UI
 ```
-[ブラウザ] マイク → Web Speech API → テキスト
-    ↓ WebSocket
-[FastAPI] ──┬─→ Azure Foundry (gpt-5.4) → 要約 / 質問抽出 / 回答
-            └─→ Microsoft Learn MCP (https://learn.microsoft.com/api/mcp)
-                  ↑ streamable HTTP, 認証不要
-    ↓ WebSocket
-[ブラウザ] パネル表示更新 (transcript / summary / Q&A + 引用)
+
+### Data Flow (Sequence)
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant F as FastAPI
+    participant G as Azure Foundry
+    participant M as Learn MCP
+
+    B->>F: WS transcript (speaker, text)
+    Note over F: debounce 8s / 8 lines
+    F->>G: summarize(transcript)
+    G-->>F: rolling summary
+    F-->>B: summary_update
+
+    B->>F: WS request_questions
+    F->>G: extract questions
+    G-->>F: questions[]
+    F-->>B: questions_update
+
+    loop For each question
+        F->>M: search(question)
+        M-->>F: doc snippets
+        F->>G: answer(question, context)
+        G-->>F: answer + citations
+        F-->>B: answer_update
+    end
 ```
 
 ## セットアップ (Windows)
@@ -133,4 +194,8 @@ frontend/
 - [ ] 議事録エクスポート (Markdown/PDF)
 - [ ] 質問の増分抽出（毎回全文を投げない）
 - [ ] Azure Container Apps へデプロイ
+
+## License
+
+This project is licensed under the [Apache License 2.0](LICENSE).
 
