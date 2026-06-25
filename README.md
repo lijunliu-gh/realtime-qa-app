@@ -103,6 +103,7 @@ MCP_LEARN_URL=https://learn.microsoft.com/api/mcp
 ALLOWED_ORIGINS=http://localhost:5173
 # Azure Speech (AIServices リソース)
 AZURE_SPEECH_REGION=eastus2
+AZURE_SPEECH_RESOURCE_ID=/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<name>
 # Foundry リソースが特定テナントなら指定（InteractiveBrowserCredential 用）
 # AZURE_TENANT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
@@ -145,8 +146,9 @@ npm run dev
 
 ### 5. ブラウザで http://localhost:5173 を開く
 
-- 「開始」を押す → マイク許可
-- 喋ると左パネルに文字起こしが流れる
+- 言語セレクターで認識言語を選択（日本語 / English / 中文 / 한국어 / Français / Deutsch）
+- 「開始」を押す → マイク許可 → Azure Speech SDK でリアルタイム文字起こし開始
+- 喋ると左パネルに文字起こしが流れる（話者が自動識別される場合あり）
 - 約 8 秒静かにするか 8 行貯まると Foundry が要約を更新
 - 「🔍 抽出」を押すと質問を抽出 → 各質問について MCP で Learn を検索 → 引用付き回答が表示される
 - 「📄 エクスポート」を押すと Markdown 議事録（要約 + 文字起こし + Q&A + 引用）をダウンロード
