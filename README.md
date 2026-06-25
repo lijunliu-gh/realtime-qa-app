@@ -193,7 +193,7 @@ frontend/
 - [ ] Azure Speech SDK に切り替え（多言語 / 話者識別）
 - [ ] Redis SessionStore + 再接続復元 + 認証
 - [x] ~~議事録エクスポート (Markdown/PDF)~~ → v1.1.0 で Markdown エクスポート実装済み
-- [ ] 質問の増分抽出（毎回全文を投げない）
+- [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み
 - [ ] Azure Container Apps へデプロイ
 
 ## License
