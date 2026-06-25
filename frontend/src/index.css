@@ -29,6 +29,38 @@
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 16px;
+
+  /* Grid */
+  --grid-color: rgba(0, 229, 255, 0.03);
+  --orb-color: rgba(0, 229, 255, 0.06);
+}
+
+/* Light theme — Apple glassmorphism */
+[data-theme="light"] {
+  --bg-void: linear-gradient(135deg, #e8f0fe 0%, #f3e8ff 50%, #fce4ec 100%);
+  --bg-primary: #ffffff;
+  --bg-panel: rgba(255, 255, 255, 0.65);
+  --bg-glass: rgba(255, 255, 255, 0.45);
+  --bg-hover: rgba(99, 102, 241, 0.06);
+
+  --neon-cyan: #6366f1;
+  --neon-blue: #3b82f6;
+  --neon-purple: #8b5cf6;
+  --neon-green: #10b981;
+  --neon-orange: #f59e0b;
+  --neon-red: #ef4444;
+
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --text-dim: #94a3b8;
+
+  --border-glow: rgba(99, 102, 241, 0.3);
+  --border-subtle: rgba(99, 102, 241, 0.12);
+  --shadow-neon: 0 0 20px rgba(99, 102, 241, 0.08);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  --grid-color: rgba(99, 102, 241, 0.03);
+  --orb-color: rgba(139, 92, 246, 0.06);
 }
 
 * {
@@ -38,11 +70,13 @@
 }
 
 body {
-  font-family: 'Segoe UI', 'Meiryo', -apple-system, sans-serif;
-  background-color: var(--bg-void);
+  font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', 'Hiragino Sans', 'Meiryo', sans-serif;
+  background: var(--bg-void);
   color: var(--text-primary);
   height: 100vh;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Animated grid background */
@@ -51,11 +85,32 @@ body::before {
   position: fixed;
   inset: 0;
   background:
-    linear-gradient(rgba(0, 229, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
   background-size: 60px 60px;
   pointer-events: none;
   z-index: 0;
+}
+
+/* Floating ambient orbs */
+body::after {
+  content: '';
+  position: fixed;
+  top: -20%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, var(--orb-color) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: float-orb 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes float-orb {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30vw, 20vh) scale(1.2); }
+  66% { transform: translate(60vw, -10vh) scale(0.8); }
 }
 
 #root {

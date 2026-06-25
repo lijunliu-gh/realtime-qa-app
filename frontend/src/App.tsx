@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useWebSocket, type Citation } from './hooks/useWebSocket';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { getMessages, type UILocale } from './i18n';
@@ -41,6 +42,7 @@ function App() {
   const [language, setLanguage] = useState('ja-JP');
   const [uiLocale, setUiLocale] = useState<UILocale>('ja-JP');
   const [showTranscript, setShowTranscript] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   const t = getMessages(uiLocale);
 
@@ -91,6 +93,12 @@ function App() {
   const handleRequestQuestions = () => { sendMessage({ type: 'request_questions' }); };
   const handleExport = () => { window.open(`/export/${sessionId}`, '_blank'); };
 
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    document.documentElement.setAttribute('data-theme', next === 'dark' ? '' : 'light');
+  };
+
   return (
     <div className="app">
       {/* Top Bar */}
@@ -98,6 +106,7 @@ function App() {
         <div className="top-bar-left">
           <span className="brand">{t.appTitle}</span>
           <span className="brand-sub">{t.appSubtitle}</span>
+          <span className="brand-powered">Powered by Microsoft Foundry</span>
         </div>
 
         <div className="top-bar-center">
@@ -111,6 +120,7 @@ function App() {
         </div>
 
         <div className="top-bar-right">
+          <span className="select-label" title={t.speechLang}>🎤</span>
           <select
             className="select-neo"
             value={language}
@@ -122,6 +132,7 @@ function App() {
             ))}
           </select>
 
+          <span className="select-label" title={t.uiLang}>🌐</span>
           {UI_LANGUAGES.map((l) => (
             <button
               key={l.code}
@@ -141,6 +152,10 @@ function App() {
           </div>
 
           <span className={`connection-dot ${isConnected ? 'on' : 'off'}`} title={isConnected ? t.connected : t.disconnected} />
+
+          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
         </div>
       </header>
 
@@ -155,9 +170,7 @@ function App() {
             {!summary && <p className="summary-empty">{t.noSummary}</p>}
             {summary && (
               <div className="summary-text">
-                {summary.split('\n').map((line, i) => (
-                  <p key={i}>{line}</p>
-                ))}
+                <ReactMarkdown>{summary}</ReactMarkdown>
               </div>
             )}
           </div>
@@ -171,13 +184,13 @@ function App() {
           <div className="card-body">
             {questions.length === 0 && <p className="qa-empty">{t.noQuestions}</p>}
             {questions.map((q) => (
-              <div key={q.id} className="qa-item">
-                <div className="qa-question">
+              <details key={q.id} className="qa-item" open={q.pending || !q.answer}>
+                <summary className="qa-question">
                   <span className="qa-badge">Q{q.id}</span>
                   <span className="qa-q-text">{q.text}</span>
-                </div>
+                </summary>
                 {q.pending && <div className="qa-pending">{t.pending}</div>}
-                {q.answer && <div className="qa-answer">{q.answer}</div>}
+                {q.answer && <div className="qa-answer"><ReactMarkdown>{q.answer}</ReactMarkdown></div>}
                 {q.citations && q.citations.length > 0 && (
                   <ul className="qa-citations">
                     {q.citations.map((c, i) => (
@@ -189,7 +202,7 @@ function App() {
                     ))}
                   </ul>
                 )}
-              </div>
+              </details>
             ))}
           </div>
         </div>
@@ -211,6 +224,11 @@ function App() {
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <footer className="app-footer">
+        © 2026 Created by <a href="https://github.com/lijunliu-gh" target="_blank" rel="noopener noreferrer">Lijun Liu</a>
+      </footer>
     </div>
   );
 }
