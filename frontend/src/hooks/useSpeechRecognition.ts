@@ -15,11 +15,11 @@ async function fetchSpeechToken(): Promise<{ token: string; region: string }> {
 }
 
 /**
- * Speech recognition hook using Azure Speech SDK.
+ * Speech recognition hook using Azure Speech SDK ConversationTranscriber.
  * Supports multi-language and speaker diarization.
  */
 export function useSpeechRecognition({ onResult, language = 'ja-JP' }: SpeechRecognitionOptions) {
-  const recognizerRef = useRef<SpeechSDK.SpeechRecognizer | null>(null);
+  const transcriberRef = useRef<SpeechSDK.ConversationTranscriber | null>(null);
   const onResultRef = useRef(onResult);
   onResultRef.current = onResult;
   const languageRef = useRef(language);
@@ -27,7 +27,7 @@ export function useSpeechRecognition({ onResult, language = 'ja-JP' }: SpeechRec
 
   const start = useCallback(async () => {
     // Avoid double-start.
-    if (recognizerRef.current) {
+    if (transcriberRef.current) {
       return;
     }
 
@@ -47,63 +47,48 @@ export function useSpeechRecognition({ onResult, language = 'ja-JP' }: SpeechRec
     speechConfig.speechRecognitionLanguage = languageRef.current;
 
     const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-    const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+    const transcriber = new SpeechSDK.ConversationTranscriber(speechConfig, audioConfig);
 
-    recognizer.recognized = (_sender, event) => {
+    transcriber.transcribed = (_sender, event) => {
       if (
         event.result.reason === SpeechSDK.ResultReason.RecognizedSpeech &&
         event.result.text.trim()
       ) {
-        // Try to extract speaker ID from JSON properties if available.
-        let speaker: string | undefined;
-        try {
-          const json = event.result.properties.getProperty(
-            SpeechSDK.PropertyId.SpeechServiceResponse_JsonResult
-          );
-          if (json) {
-            const parsed = JSON.parse(json);
-            const speakerId = parsed?.Speaker?.Id || parsed?.SpeakerId;
-            if (speakerId) {
-              speaker = `Speaker ${speakerId}`;
-            }
-          }
-        } catch {
-          // Ignore parse errors.
-        }
+        const speaker = event.result.speakerId || undefined;
         onResultRef.current(event.result.text.trim(), speaker);
       }
     };
 
-    recognizer.canceled = (_sender, event) => {
+    transcriber.canceled = (_sender, event) => {
       if (event.reason === SpeechSDK.CancellationReason.Error) {
         console.error('Speech recognition error:', event.errorDetails);
       }
     };
 
-    recognizer.startContinuousRecognitionAsync(
+    transcriber.startTranscribingAsync(
       () => {
-        console.log('Speech recognition started');
+        console.log('Conversation transcription started');
       },
       (err) => {
-        console.error('Failed to start speech recognition:', err);
+        console.error('Failed to start transcription:', err);
         alert('音声認識の開始に失敗しました。');
       }
     );
 
-    recognizerRef.current = recognizer;
+    transcriberRef.current = transcriber;
   }, []);
 
   const stop = useCallback(() => {
-    const recognizer = recognizerRef.current;
-    recognizerRef.current = null;
-    if (recognizer) {
-      recognizer.stopContinuousRecognitionAsync(
+    const transcriber = transcriberRef.current;
+    transcriberRef.current = null;
+    if (transcriber) {
+      transcriber.stopTranscribingAsync(
         () => {
-          recognizer.close();
+          transcriber.close();
         },
         (err) => {
-          console.error('Failed to stop speech recognition:', err);
-          recognizer.close();
+          console.error('Failed to stop transcription:', err);
+          transcriber.close();
         }
       );
     }
