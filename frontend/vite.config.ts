@@ -16,6 +16,9 @@ export default defineConfig({
       '/export': {
         target: backendUrl,
       },
+      '/api': {
+        target: backendUrl,
+      },
     },
   },
 });
