@@ -397,6 +397,11 @@ async def health():
 async def speech_token():
     """Issue a short-lived Entra ID token for Azure Speech SDK (browser)."""
     region = os.getenv("AZURE_SPEECH_REGION", "eastus2")
+    resource_id = os.getenv(
+        "AZURE_SPEECH_RESOURCE_ID",
+        "/subscriptions/b2c6bae2-ce72-40dc-a9da-977899a9febe/resourceGroups"
+        "/RefreshSub/providers/Microsoft.CognitiveServices/accounts/MSFoundryLab",
+    )
     try:
         from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential, ChainedTokenCredential
         tenant_id = os.getenv("AZURE_TENANT_ID")
@@ -408,7 +413,9 @@ async def speech_token():
         token = await asyncio.to_thread(
             lambda: credential.get_token("https://cognitiveservices.azure.com/.default").token
         )
-        return JSONResponse({"token": token, "region": region})
+        # Speech SDK requires AAD tokens in format: aad#<ARM-resource-ID>#<token>
+        aad_token = f"aad#{resource_id}#{token}"
+        return JSONResponse({"token": aad_token, "region": region})
     except Exception as exc:
         logger.exception("Failed to get speech token")
         return JSONResponse({"error": str(exc)}, status_code=500)
