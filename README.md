@@ -1,6 +1,12 @@
 # RealtimeQA
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/github/v/tag/lijunliu-gh/realtime-qa-app?label=version&color=cyan)](https://github.com/lijunliu-gh/realtime-qa-app/releases/latest)
+[![Python](https://img.shields.io/badge/Python-3.11+-3776ab.svg?logo=python&logoColor=white)](backend/)
+[![React](https://img.shields.io/badge/React-18-61dafb.svg?logo=react&logoColor=white)](frontend/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6.svg?logo=typescript&logoColor=white)](frontend/)
+[![Azure Speech](https://img.shields.io/badge/Azure-Speech_SDK-0078d4.svg?logo=microsoft-azure&logoColor=white)](https://learn.microsoft.com/azure/ai-services/speech-service/)
+[![Foundry](https://img.shields.io/badge/Microsoft-Foundry-6b2fa0.svg?logo=microsoft&logoColor=white)](https://learn.microsoft.com/azure/ai-services/openai/)
 
 > Real-time technical Q&A and meeting-notes web app — transcribe speech, summarize conversations, and answer questions with cited Microsoft Learn docs.
 
