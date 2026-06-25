@@ -49,52 +49,83 @@ export function useWebSocket(options: WebSocketHookOptions) {
   const sessionIdRef = useRef(crypto.randomUUID());
   const optionsRef = useRef(options);
   optionsRef.current = options;
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mountedRef = useRef(true);
 
   useEffect(() => {
+    mountedRef.current = true;
     const wsUrl = resolveWsUrl(sessionIdRef.current);
 
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
+    function connect() {
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
 
-    ws.onopen = () => setIsConnected(true);
-    ws.onclose = () => setIsConnected(false);
-    ws.onerror = () => setIsConnected(false);
+      ws.onopen = () => {
+        if (mountedRef.current) setIsConnected(true);
+      };
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      ws.onclose = () => {
+        if (mountedRef.current) {
+          setIsConnected(false);
+          scheduleReconnect();
+        }
+      };
 
-      switch (data.type) {
-        case 'transcript_append':
-          optionsRef.current.onTranscriptAppend(data.line);
-          break;
-        case 'transcript_snapshot':
-          optionsRef.current.onTranscriptSnapshot(data.lines);
-          break;
-        case 'summary_update':
-          optionsRef.current.onSummaryUpdate(data.summary);
-          break;
-        case 'questions_update':
-          optionsRef.current.onQuestionsUpdate(data.questions);
-          break;
-        case 'answer_update':
-          optionsRef.current.onAnswerUpdate({
-            index: data.index,
-            question: data.question,
-            answer: data.answer,
-            citations: data.citations || [],
-          });
-          break;
-        case 'token_count':
-          optionsRef.current.onTokenCount(data.count);
-          break;
-        case 'error':
-          optionsRef.current.onError?.(data.where, data.message);
-          break;
-      }
-    };
+      ws.onerror = () => {
+        // onclose will fire after onerror, so reconnect is handled there
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        switch (data.type) {
+          case 'transcript_append':
+            optionsRef.current.onTranscriptAppend(data.line);
+            break;
+          case 'transcript_snapshot':
+            optionsRef.current.onTranscriptSnapshot(data.lines);
+            break;
+          case 'summary_update':
+            optionsRef.current.onSummaryUpdate(data.summary);
+            break;
+          case 'questions_update':
+            optionsRef.current.onQuestionsUpdate(data.questions);
+            break;
+          case 'answer_update':
+            optionsRef.current.onAnswerUpdate({
+              index: data.index,
+              question: data.question,
+              answer: data.answer,
+              citations: data.citations || [],
+            });
+            break;
+          case 'token_count':
+            optionsRef.current.onTokenCount(data.count);
+            break;
+          case 'error':
+            optionsRef.current.onError?.(data.where, data.message);
+            break;
+        }
+      };
+    }
+
+    function scheduleReconnect() {
+      if (reconnectTimer.current) return;
+      reconnectTimer.current = setTimeout(() => {
+        reconnectTimer.current = null;
+        if (mountedRef.current) connect();
+      }, 2000);
+    }
+
+    connect();
 
     return () => {
-      ws.close();
+      mountedRef.current = false;
+      if (reconnectTimer.current) {
+        clearTimeout(reconnectTimer.current);
+        reconnectTimer.current = null;
+      }
+      wsRef.current?.close();
     };
   }, []);
 
