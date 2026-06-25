@@ -10,7 +10,7 @@
 
 | # | Feature | Tech |
 |---|---------|------|
-| ① | **Live Transcription** — 音声をリアルタイムで文字起こし | Web Speech API (Chrome) |
+| ① | **Live Transcription** — 音声をリアルタイムで文字起こし（多言語 / 話者識別対応） | Azure Speech SDK |
 | ② | **Rolling Summary** — 会話を自動要約 | Azure Foundry (GPT) |
 | ③ | **Q&A with Citations** — 質問を抽出し引用付き回答を生成 | Foundry + Microsoft Learn MCP |
 
@@ -84,8 +84,9 @@ sequenceDiagram
 ### 0. 前提
 - Python 3.11+
 - Node.js 18+
-- **Chrome**（Web Speech API のため）
+- **Chrome / Edge / Firefox / Safari**
 - Azure サブスクリプション + Foundry リソース（gpt-5.4 デプロイ済み）
+- Azure AI Services リソース（Speech 用、Entra ID 認証）
 
 ### 1. `backend/.env` を作成
 
@@ -100,6 +101,8 @@ AZURE_OPENAI_API_KEY=
 AZURE_OPENAI_API_VERSION=2024-10-21
 MCP_LEARN_URL=https://learn.microsoft.com/api/mcp
 ALLOWED_ORIGINS=http://localhost:5173
+# Azure Speech (AIServices リソース)
+AZURE_SPEECH_REGION=eastus2
 # Foundry リソースが特定テナントなら指定（InteractiveBrowserCredential 用）
 # AZURE_TENANT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
@@ -190,7 +193,7 @@ frontend/
 
 ## 今後の拡張
 
-- [ ] Azure Speech SDK に切り替え（多言語 / 話者識別）
+- [x] ~~Azure Speech SDK に切り替え（多言語 / 話者識別）~~ → v2.0.0 で実装済み
 - [ ] Redis SessionStore + 再接続復元 + 認証
 - [x] ~~議事録エクスポート (Markdown/PDF)~~ → v1.1.0 で Markdown エクスポート実装済み
 - [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み

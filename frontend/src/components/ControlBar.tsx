@@ -1,9 +1,20 @@
 import './ControlBar.css';
 
+const LANGUAGES = [
+  { code: 'ja-JP', label: '日本語' },
+  { code: 'en-US', label: 'English' },
+  { code: 'zh-CN', label: '中文' },
+  { code: 'ko-KR', label: '한국어' },
+  { code: 'fr-FR', label: 'Français' },
+  { code: 'de-DE', label: 'Deutsch' },
+];
+
 interface ControlBarProps {
   isRunning: boolean;
   isConnected: boolean;
   tokenCount: number;
+  language: string;
+  onLanguageChange: (lang: string) => void;
   onStart: () => void;
   onStop: () => void;
   onExport: () => void;
@@ -13,6 +24,8 @@ function ControlBar({
   isRunning,
   isConnected,
   tokenCount,
+  language,
+  onLanguageChange,
   onStart,
   onStop,
   onExport,
@@ -38,8 +51,21 @@ function ControlBar({
       </div>
 
       <div className="control-bar-center">
-        <span className="control-info">🎤 マイク: Default</span>
-        <span className="control-info">🔊 スピーカー: Default</span>
+        <label className="control-info">
+          🌐 言語:
+          <select
+            value={language}
+            onChange={(e) => onLanguageChange(e.target.value)}
+            disabled={isRunning}
+            className="language-select"
+          >
+            {LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="control-bar-right">

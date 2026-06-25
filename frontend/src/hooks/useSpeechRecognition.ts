@@ -1,107 +1,111 @@
 import { useRef, useCallback } from 'react';
+import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
 
 interface SpeechRecognitionOptions {
-  onResult: (text: string) => void;
+  onResult: (text: string, speaker?: string) => void;
+  language?: string;
+}
+
+async function fetchSpeechToken(): Promise<{ token: string; region: string }> {
+  const res = await fetch('/api/speech-token');
+  if (!res.ok) {
+    throw new Error(`Speech token request failed: ${res.status}`);
+  }
+  return res.json();
 }
 
 /**
- * Speech recognition hook using Web Speech API (browser built-in).
- * Can be swapped to Azure Speech SDK by replacing this implementation.
+ * Speech recognition hook using Azure Speech SDK.
+ * Supports multi-language and speaker diarization.
  */
-export function useSpeechRecognition({ onResult }: SpeechRecognitionOptions) {
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const stoppedByUserRef = useRef(false);
-  const restartTimerRef = useRef<number | null>(null);
+export function useSpeechRecognition({ onResult, language = 'ja-JP' }: SpeechRecognitionOptions) {
+  const recognizerRef = useRef<SpeechSDK.SpeechRecognizer | null>(null);
   const onResultRef = useRef(onResult);
   onResultRef.current = onResult;
+  const languageRef = useRef(language);
+  languageRef.current = language;
 
-  const start = useCallback(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert('このブラウザは音声認識をサポートしていません。Chromeを使用してください。');
+  const start = useCallback(async () => {
+    // Avoid double-start.
+    if (recognizerRef.current) {
       return;
     }
 
-    // Avoid double-start; if already running, do nothing.
-    if (recognitionRef.current) {
-      return;
-    }
-
-    stoppedByUserRef.current = false;
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ja-JP';
-    recognition.continuous = true;
-    recognition.interimResults = false;
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const lastResult = event.results[event.results.length - 1];
-      if (lastResult.isFinal) {
-        const text = lastResult[0].transcript.trim();
-        if (text) {
-          onResultRef.current(text);
-        }
-      }
-    };
-
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        stoppedByUserRef.current = true;
-        alert('マイクへのアクセスが拒否されました。ブラウザの設定を確認してください。');
-      }
-    };
-
-    // Auto-restart on end (continuous mode workaround). Guard against
-    // rapid loops (no-speech/aborted) by deferring with a short delay and
-    // bailing out when the user has stopped or recognition was torn down.
-    recognition.onend = () => {
-      if (stoppedByUserRef.current || recognitionRef.current !== recognition) {
-        return;
-      }
-      if (restartTimerRef.current !== null) {
-        return;
-      }
-      restartTimerRef.current = window.setTimeout(() => {
-        restartTimerRef.current = null;
-        if (stoppedByUserRef.current || recognitionRef.current !== recognition) {
-          return;
-        }
-        try {
-          recognition.start();
-        } catch (err) {
-          // InvalidStateError if it's already started, etc. Swallow.
-          console.warn('Speech recognition restart failed:', err);
-        }
-      }, 300);
-    };
-
+    let tokenData: { token: string; region: string };
     try {
-      recognition.start();
+      tokenData = await fetchSpeechToken();
     } catch (err) {
-      console.warn('Speech recognition initial start failed:', err);
+      console.error('Failed to get speech token:', err);
+      alert('Speech トークンの取得に失敗しました。バックエンドが起動しているか確認してください。');
       return;
     }
-    recognitionRef.current = recognition;
+
+    const speechConfig = SpeechSDK.SpeechConfig.fromAuthorizationToken(
+      tokenData.token,
+      tokenData.region
+    );
+    speechConfig.speechRecognitionLanguage = languageRef.current;
+
+    const audioConfig = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
+    const recognizer = new SpeechSDK.SpeechRecognizer(speechConfig, audioConfig);
+
+    recognizer.recognized = (_sender, event) => {
+      if (
+        event.result.reason === SpeechSDK.ResultReason.RecognizedSpeech &&
+        event.result.text.trim()
+      ) {
+        // Try to extract speaker ID from JSON properties if available.
+        let speaker: string | undefined;
+        try {
+          const json = event.result.properties.getProperty(
+            SpeechSDK.PropertyId.SpeechServiceResponse_JsonResult
+          );
+          if (json) {
+            const parsed = JSON.parse(json);
+            const speakerId = parsed?.Speaker?.Id || parsed?.SpeakerId;
+            if (speakerId) {
+              speaker = `Speaker ${speakerId}`;
+            }
+          }
+        } catch {
+          // Ignore parse errors.
+        }
+        onResultRef.current(event.result.text.trim(), speaker);
+      }
+    };
+
+    recognizer.canceled = (_sender, event) => {
+      if (event.reason === SpeechSDK.CancellationReason.Error) {
+        console.error('Speech recognition error:', event.errorDetails);
+      }
+    };
+
+    recognizer.startContinuousRecognitionAsync(
+      () => {
+        console.log('Speech recognition started');
+      },
+      (err) => {
+        console.error('Failed to start speech recognition:', err);
+        alert('音声認識の開始に失敗しました。');
+      }
+    );
+
+    recognizerRef.current = recognizer;
   }, []);
 
   const stop = useCallback(() => {
-    stoppedByUserRef.current = true;
-    if (restartTimerRef.current !== null) {
-      clearTimeout(restartTimerRef.current);
-      restartTimerRef.current = null;
-    }
-    const ref = recognitionRef.current;
-    recognitionRef.current = null;
-    if (ref) {
-      ref.onend = null;
-      try {
-        ref.stop();
-      } catch {
-        // ignore
-      }
+    const recognizer = recognizerRef.current;
+    recognizerRef.current = null;
+    if (recognizer) {
+      recognizer.stopContinuousRecognitionAsync(
+        () => {
+          recognizer.close();
+        },
+        (err) => {
+          console.error('Failed to stop speech recognition:', err);
+          recognizer.close();
+        }
+      );
     }
   }, []);
 

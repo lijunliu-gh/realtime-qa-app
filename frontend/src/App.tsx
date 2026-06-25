@@ -26,6 +26,7 @@ function App() {
   const [summary, setSummary] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [tokenCount, setTokenCount] = useState(0);
+  const [language, setLanguage] = useState('ja-JP');
 
   const { sendMessage, isConnected, sessionId } = useWebSocket({
     onTranscriptAppend: (line) =>
@@ -57,17 +58,17 @@ function App() {
   });
 
   const handleTranscript = useCallback(
-    (text: string) => {
+    (text: string, speaker?: string) => {
       sendMessage({
         type: 'transcript',
-        speaker: '自分',
+        speaker: speaker || '自分',
         text,
       });
     },
     [sendMessage]
   );
 
-  const { start, stop } = useSpeechRecognition({ onResult: handleTranscript });
+  const { start, stop } = useSpeechRecognition({ onResult: handleTranscript, language });
 
   const handleStart = () => {
     setIsRunning(true);
@@ -98,6 +99,8 @@ function App() {
         isRunning={isRunning}
         isConnected={isConnected}
         tokenCount={tokenCount}
+        language={language}
+        onLanguageChange={setLanguage}
         onStart={handleStart}
         onStop={handleStop}
         onExport={handleExport}

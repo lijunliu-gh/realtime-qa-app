@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 
 from services.summarizer import SummarizerService
 from services.mcp_client import LearnMcpClient
@@ -391,6 +391,27 @@ async def _answer_question(
 @app.get("/health")
 async def health():
     return {"status": "ok", "sessions": len(sessions)}
+
+
+@app.get("/api/speech-token")
+async def speech_token():
+    """Issue a short-lived Entra ID token for Azure Speech SDK (browser)."""
+    region = os.getenv("AZURE_SPEECH_REGION", "eastus2")
+    try:
+        from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential, ChainedTokenCredential
+        tenant_id = os.getenv("AZURE_TENANT_ID")
+        interactive_kwargs = {"tenant_id": tenant_id} if tenant_id else {}
+        credential = ChainedTokenCredential(
+            DefaultAzureCredential(),
+            InteractiveBrowserCredential(**interactive_kwargs),
+        )
+        token = await asyncio.to_thread(
+            lambda: credential.get_token("https://cognitiveservices.azure.com/.default").token
+        )
+        return JSONResponse({"token": token, "region": region})
+    except Exception as exc:
+        logger.exception("Failed to get speech token")
+        return JSONResponse({"error": str(exc)}, status_code=500)
 
 
 @app.get("/export/{session_id}")
