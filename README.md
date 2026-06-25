@@ -18,26 +18,32 @@
 
 ```mermaid
 flowchart LR
-    subgraph Browser["🖥️ Browser (Chrome)"]
+    subgraph Browser["🖥️ Browser"]
         MIC["🎤 Microphone"]
-        WSA["Web Speech API"]
+        SDK["Azure Speech SDK<br/>(ConversationTranscriber)"]
         UI["React UI<br/>(Transcript / Summary / Q&A)"]
     end
 
     subgraph Backend["⚙️ FastAPI Backend"]
+        TOKEN["/api/speech-token"]
         WS["WebSocket Hub"]
         SUM["Summarizer"]
         QA["Q&A Pipeline"]
     end
 
     subgraph Cloud["☁️ Azure / Microsoft"]
+        SPEECH["Azure AI Services<br/>(Speech)"]
         FOUNDRY["Azure Foundry<br/>(GPT model)"]
         MCP["Microsoft Learn MCP<br/>learn.microsoft.com/api/mcp"]
     end
 
-    MIC -->|audio stream| WSA
-    WSA -->|text| UI
+    MIC -->|audio stream| SDK
+    SDK -->|recognize| SPEECH
+    SPEECH -->|text + speakerId| SDK
+    SDK -->|transcript| UI
     UI -->|WebSocket: transcript| WS
+    Browser -->|fetch token| TOKEN
+    TOKEN -->|AAD token| Browser
     WS --> SUM
     WS --> QA
     SUM -->|prompt| FOUNDRY
@@ -55,18 +61,25 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant B as Browser
+    participant S as Azure Speech
     participant F as FastAPI
     participant G as Azure Foundry
     participant M as Learn MCP
 
+    B->>F: GET /api/speech-token
+    F-->>B: AAD token + region
+
+    B->>S: audio stream (ConversationTranscriber)
+    S-->>B: text + speakerId
+
     B->>F: WS transcript (speaker, text)
-    Note over F: debounce 8s / 8 lines
+    Note over F: debounce 15s / 40 lines
     F->>G: summarize(transcript)
     G-->>F: rolling summary
     F-->>B: summary_update
 
     B->>F: WS request_questions
-    F->>G: extract questions
+    F->>G: extract questions (incremental)
     G-->>F: questions[]
     F-->>B: questions_update
 
@@ -149,7 +162,7 @@ npm run dev
 - 言語セレクターで認識言語を選択（日本語 / English / 中文 / 한국어 / Français / Deutsch）
 - 「開始」を押す → マイク許可 → Azure Speech SDK でリアルタイム文字起こし開始
 - 喋ると左パネルに文字起こしが流れる（話者が自動識別される場合あり）
-- 約 8 秒静かにするか 8 行貯まると Foundry が要約を更新
+- 約 15 秒静かにするか 40 行貯まると Foundry が要約を更新
 - 「🔍 抽出」を押すと質問を抽出 → 各質問について MCP で Learn を検索 → 引用付き回答が表示される
 - 「📄 エクスポート」を押すと Markdown 議事録（要約 + 文字起こし + Q&A + 引用）をダウンロード
 - **初回 Foundry 呼び出し時にブラウザでサインインが必要**（az login していない場合）
