@@ -336,9 +336,10 @@ async def _extract_questions(websocket: WebSocket,
     await _broadcast_tokens(websocket, session, used)
 
     # Kick off answer pipeline for any new question we haven't answered yet.
-    for idx, q in enumerate(questions):
+    for q in new_questions:
         if q in session.answers or q in session.in_flight_answers:
             continue
+        idx = session.questions.index(q)
         session.in_flight_answers.add(q)
         asyncio.create_task(_answer_question(websocket, session, idx, q))
 
