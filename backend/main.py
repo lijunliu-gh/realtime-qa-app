@@ -18,8 +18,8 @@ logger = logging.getLogger("realtime_qa")
 logging.basicConfig(level=logging.INFO)
 
 # Debounce / batching knobs for summarization.
-SUMMARY_IDLE_SECONDS = float(os.getenv("SUMMARY_IDLE_SECONDS", "8"))
-SUMMARY_MAX_PENDING_LINES = int(os.getenv("SUMMARY_MAX_PENDING_LINES", "8"))
+SUMMARY_IDLE_SECONDS = float(os.getenv("SUMMARY_IDLE_SECONDS", "15"))
+SUMMARY_MAX_PENDING_LINES = int(os.getenv("SUMMARY_MAX_PENDING_LINES", "40"))
 TRANSCRIPT_HISTORY_LIMIT = int(os.getenv("TRANSCRIPT_HISTORY_LIMIT", "500"))
 MCP_SEARCH_LIMIT = int(os.getenv("MCP_SEARCH_LIMIT", "5"))
 
