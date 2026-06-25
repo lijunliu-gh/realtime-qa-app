@@ -142,7 +142,24 @@ class SummarizerService:
         text = response.choices[0].message.content or ""
         return text, _usage_tokens(response)
 
-    async def extract_questions(self, transcript: str) -> tuple[list[str], int]:
+    async def extract_questions(
+        self,
+        transcript: str,
+        existing_questions: list[str] | None = None,
+        summary: str = "",
+    ) -> tuple[list[str], int]:
+        existing = existing_questions or []
+        existing_block = ""
+        if existing:
+            existing_block = (
+                "\n既に抽出済みの質問（重複しないこと）:\n"
+                + "\n".join(f"- {q}" for q in existing)
+                + "\n"
+            )
+        summary_block = ""
+        if summary:
+            summary_block = f"\n会話の背景（要約）:\n{summary}\n"
+
         response = await self.client.chat.completions.create(
             model=self.deployment,
             messages=[
@@ -150,15 +167,22 @@ class SummarizerService:
                     "role": "system",
                     "content": (
                         "あなたは会話から質問を抽出するアシスタントです。"
-                        "以下の会話から、参加者が質問している内容を抽出してください。"
+                        "以下の新しい会話部分から、参加者が質問している内容を抽出してください。"
+                        "既に抽出済みの質問と重複するものは含めないでください。"
                         "各質問を具体的な形にまとめてください。"
                         "JSONオブジェクト形式で返してください。"
                         "形式: {\"questions\": [\"質問1\", \"質問2\"]}"
-                        "質問が無い場合は {\"questions\": []} を返してください。"
+                        "新しい質問が無い場合は {\"questions\": []} を返してください。"
                         "日本語で回答してください。"
                     ),
                 },
-                {"role": "user", "content": f"会話内容:\n{transcript}"},
+                {
+                    "role": "user",
+                    "content": (
+                        f"{summary_block}{existing_block}"
+                        f"\n新しい会話部分:\n{transcript}"
+                    ),
+                },
             ],
             temperature=0.3,
             max_completion_tokens=500,

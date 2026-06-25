@@ -73,6 +73,8 @@ class SessionState:
         self.token_count: int = 0
         # Index up to which transcript has been folded into `summary`.
         self.summary_cursor: int = 0
+        # Index up to which transcript has been processed for question extraction.
+        self.questions_cursor: int = 0
         # Lock to serialize summary calls per session.
         self.summary_lock: asyncio.Lock = asyncio.Lock()
         # Pending debounced summary task; None when not scheduled.
@@ -173,6 +175,7 @@ async def _handle_transcript(websocket: WebSocket, session: SessionState,
         drop = len(session.transcript_lines) - TRANSCRIPT_HISTORY_LIMIT
         session.transcript_lines = session.transcript_lines[drop:]
         session.summary_cursor = max(0, session.summary_cursor - drop)
+        session.questions_cursor = max(0, session.questions_cursor - drop)
 
     # Send only the new line; client appends.
     await _safe_send(websocket, {
@@ -279,18 +282,44 @@ async def _extract_questions(websocket: WebSocket,
     if not session.transcript_lines:
         return
 
-    transcript_text = "\n".join(
-        f"[{l['speaker']}] {l['text']}" for l in session.transcript_lines
+    # Only process lines added since the last extraction.
+    start = session.questions_cursor
+    end = len(session.transcript_lines)
+    if end <= start:
+        # No new lines — just re-send existing questions (with answers).
+        questions_payload = [
+            {
+                "text": q,
+                "answer": session.answers.get(q, {}).get("answer"),
+                "citations": session.answers.get(q, {}).get("citations", []),
+            }
+            for q in session.questions
+        ]
+        await _safe_send(websocket, {
+            "type": "questions_update",
+            "questions": questions_payload,
+        })
+        return
+
+    new_lines = session.transcript_lines[start:end]
+    new_text = "\n".join(
+        f"[{l['speaker']}] {l['text']}" for l in new_lines
     )
 
     try:
-        questions, used = await summarizer.extract_questions(transcript_text)
+        new_questions, used = await summarizer.extract_questions(
+            new_text,
+            existing_questions=session.questions,
+            summary=session.summary,
+        )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Question extraction failed")
         await _send_error(websocket, str(exc), "extract_questions")
         return
 
-    session.questions = questions
+    session.questions_cursor = end
+    session.questions.extend(new_questions)
+
     # Build response payload including any answers we've already produced.
     questions_payload = [
         {
@@ -298,7 +327,7 @@ async def _extract_questions(websocket: WebSocket,
             "answer": session.answers.get(q, {}).get("answer"),
             "citations": session.answers.get(q, {}).get("citations", []),
         }
-        for q in questions
+        for q in session.questions
     ]
     await _safe_send(websocket, {
         "type": "questions_update",
