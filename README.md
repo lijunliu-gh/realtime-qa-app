@@ -1,4 +1,6 @@
-# RealtimeQA
+﻿# RealtimeQA
+
+**English** | [日本語](README.ja.md) | [中文](README.zh-CN.md)
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/github/v/tag/lijunliu-gh/realtime-qa-app?label=version&color=cyan)](https://github.com/lijunliu-gh/realtime-qa-app/releases/latest)
@@ -12,18 +14,16 @@
 
 > Real-time technical Q&A and meeting-notes web app — transcribe speech, summarize conversations, and answer questions with cited Microsoft Learn docs.
 
-リアルタイム技術QA + 議事録作成 Web アプリ
-
-## Features / 機能 (MVP)
+## Features (MVP)
 
 | # | Feature | Tech |
 |---|---------|------|
-| ① | **Live Transcription** — 音声をリアルタイムで文字起こし（多言語 / 話者識別対応） | Azure Speech SDK |
-| ② | **Rolling Summary** — 会話を自動要約 | Azure Foundry (GPT) |
-| ③ | **Q&A with Citations** — 質問を抽出し引用付き回答を生成 | Foundry + Microsoft Learn MCP |
-| ④ | **Teams Side Panel** — Teams 会議のライブキャプションから QA を実行 | Teams JS SDK + Live Captions |
+| ① | **Live Transcription** — Real-time speech-to-text (multilingual / speaker identification) | Azure Speech SDK |
+| ② | **Rolling Summary** — Automatic conversation summarization | Azure Foundry (GPT) |
+| ③ | **Q&A with Citations** — Extracts questions and generates answers with citations | Foundry + Microsoft Learn MCP |
+| ④ | **Teams Side Panel** — Run QA from Teams meeting live captions | Teams JS SDK + Live Captions |
 
-## Architecture / アーキテクチャ
+## Architecture
 
 ![Architecture](docs/architecture.svg)
 
@@ -73,48 +73,48 @@ sequenceDiagram
 
 > 📐 Editable diagram: [`docs/dataflow.excalidraw`](docs/dataflow.excalidraw) — open in [Excalidraw](https://excalidraw.com)
 
-## セットアップ (Windows)
+## Setup (Windows)
 
-### 0. 前提
+### 0. Prerequisites
 - Python 3.11+
 - Node.js 18+
 - **Chrome / Edge / Firefox / Safari**
-- Azure サブスクリプション + Foundry リソース（gpt-5.4 デプロイ済み）
-- Azure AI Services リソース（Speech 用、Entra ID 認証）
+- Azure subscription + Foundry resource (gpt-5.4 deployed)
+- Azure AI Services resource (for Speech, Entra ID authentication)
 
-### 1. `backend/.env` を作成
+### 1. Create `backend/.env`
 
 ```ini
-# 必須
+# Required
 AZURE_OPENAI_ENDPOINT=https://<your-resource>.openai.azure.com
 AZURE_OPENAI_DEPLOYMENT=<your-deployment-name>
-# API キーが有効なら入れる。Foundry で無効化されている場合は空にして Entra ID で認証する。
+# Set this if API key is enabled. Leave empty to authenticate via Entra ID if disabled in Foundry.
 AZURE_OPENAI_API_KEY=
 
-# 任意
+# Optional
 AZURE_OPENAI_API_VERSION=2024-10-21
 MCP_LEARN_URL=https://learn.microsoft.com/api/mcp
 ALLOWED_ORIGINS=http://localhost:5173
-# Azure Speech (AIServices リソース)
+# Azure Speech (AI Services resource)
 AZURE_SPEECH_REGION=eastus2
 AZURE_SPEECH_RESOURCE_ID=/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<name>
-# Foundry リソースが特定テナントなら指定（InteractiveBrowserCredential 用）
+# Specify if the Foundry resource is in a specific tenant (for InteractiveBrowserCredential)
 # AZURE_TENANT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
-### 2. Azure 認証（API キー無効時）
+### 2. Azure Authentication (when API key is disabled)
 
-以下のいずれかで Entra ID 認証を有効化:
+Enable Entra ID authentication using one of the following methods:
 
-| 方法 | コマンド |
-|------|----------|
-| **Azure CLI**（推奨） | `winget install Microsoft.AzureCLI` → 新シェルで `az login` |
+| Method | Command |
+|--------|---------|
+| **Azure CLI** (recommended) | `winget install Microsoft.AzureCLI` → open a new shell → `az login` |
 | **Az PowerShell** | `Install-Module Az -Scope CurrentUser` → `Connect-AzAccount` |
-| **何もしない** | 初回バックエンド起動時にブラウザが開き、サインインを促されます（`azure-identity-broker` 経由） |
+| **Do nothing** | On first backend startup, a browser window will open prompting you to sign in (via `azure-identity-broker`) |
 
-バックエンドは `DefaultAzureCredential` → `InteractiveBrowserCredential` の順で試行します。
+The backend tries `DefaultAzureCredential` first, then falls back to `InteractiveBrowserCredential`.
 
-### 3. バックエンド起動
+### 3. Start the Backend
 
 ```powershell
 cd backend
@@ -124,13 +124,13 @@ pip install -r requirements.txt
 python -m uvicorn main:app --reload --port 8000
 ```
 
-起動確認:
+Verify it's running:
 ```powershell
 curl http://localhost:8000/health
 # {"status":"ok","sessions":0}
 ```
 
-### 4. フロントエンド起動
+### 4. Start the Frontend
 
 ```powershell
 cd frontend
@@ -138,17 +138,17 @@ npm install
 npm run dev
 ```
 
-### 5. ブラウザで http://localhost:5173 を開く
+### 5. Open http://localhost:5173 in your browser
 
-- 言語セレクターで認識言語を選択（日本語 / English / 中文 / 한국어 / Français / Deutsch）
-- 「開始」を押す → マイク許可 → Azure Speech SDK でリアルタイム文字起こし開始
-- 喋ると左パネルに文字起こしが流れる（話者が自動識別される場合あり）
-- 約 15 秒静かにするか 40 行貯まると Foundry が要約を更新
-- 「🔍 抽出」を押すと質問を抽出 → 各質問について MCP で Learn を検索 → 引用付き回答が表示される
-- 「📄 エクスポート」を押すと Markdown 議事録（要約 + 文字起こし + Q&A + 引用）をダウンロード
-- **初回 Foundry 呼び出し時にブラウザでサインインが必要**（az login していない場合）
+- Select the recognition language from the language selector (Japanese / English / Chinese / Korean / French / German)
+- Click "Start" → allow microphone access → real-time transcription begins via Azure Speech SDK
+- Speech appears in the left panel as you talk (speakers may be automatically identified)
+- After ~15 seconds of silence or 40 accumulated lines, Foundry updates the summary
+- Click "🔍 Extract" to extract questions → each question is searched on Learn via MCP → answers with citations are displayed
+- Click "📄 Export" to download a Markdown transcript (summary + transcription + Q&A + citations)
+- **On the first Foundry call, you may need to sign in via browser** (if you haven't run `az login`)
 
-## ファイル構成
+## Project Structure
 
 ```
 backend/
@@ -156,139 +156,138 @@ backend/
   services/
     summarizer.py             # Foundry (Entra ID) — summary / questions / answer-with-context
     mcp_client.py             # Microsoft Learn MCP client (streamable HTTP)
-  smoke_test.py               # Foundry + MCP の疎通確認
-  smoke_mcp.py                # MCP 単独テスト (Azure 不要)
+  smoke_test.py               # Foundry + MCP connectivity check
+  smoke_mcp.py                # MCP-only test (no Azure required)
 
 frontend/
   src/
-    App.tsx                   # state コンテナ
+    App.tsx                   # State container
     hooks/
-      useWebSocket.ts         # WS プロトコル (transcript / summary / questions / answer)
-      useSpeechRecognition.ts # Azure Speech SDK ラッパ + 話者識別
-      useTeamsTranscript.ts   # Teams ライブキャプション → WS ブリッジ
+      useWebSocket.ts         # WS protocol (transcript / summary / questions / answer)
+      useSpeechRecognition.ts # Azure Speech SDK wrapper + speaker identification
+      useTeamsTranscript.ts   # Teams live captions → WS bridge
     teams/
-      TeamsConfig.tsx         # Teams タブ設定ページ
-      TeamsSidePanel.tsx      # サイドパネル UI
+      TeamsConfig.tsx         # Teams tab configuration page
+      TeamsSidePanel.tsx      # Side panel UI
     components/
       TranscriptionPanel.tsx
       SummaryPanel.tsx
-      QAPanel.tsx             # 質問 + 回答 + 引用 URL
+      QAPanel.tsx             # Questions + answers + citation URLs
 
-start-dev.ps1               # バックエンド + フロントエンド並行起動
-start-tunnel.ps1            # Dev Tunnel 起動（Teams テスト用）
+start-dev.ps1               # Start backend + frontend in parallel
+start-tunnel.ps1            # Start Dev Tunnel (for Teams testing)
 
 teams/
-  README.md                   # Teams 統合の詳細ドキュメント
+  README.md                   # Detailed Teams integration documentation
   appPackage/
-    manifest.template.json    # Teams マニフェストテンプレート（占位符）
-    color.png                 # 192x192 アイコン
-    outline.png               # 32x32 アウトラインアイコン
+    manifest.template.json    # Teams manifest template (with placeholders)
+    color.png                 # 192x192 icon
+    outline.png               # 32x32 outline icon
 ```
 
-## WebSocket プロトコル
+## WebSocket Protocol
 
-クライアント → サーバ:
-- `{type: "transcript", speaker, text}` — 新しい発話
-- `{type: "request_summary"}` — 強制要約
-- `{type: "request_questions"}` — 質問抽出 + 回答生成をキック
+Client → Server:
+- `{type: "transcript", speaker, text}` — New utterance
+- `{type: "request_summary"}` — Force summary
+- `{type: "request_questions"}` — Kick off question extraction + answer generation
 
-サーバ → クライアント:
-- `{type: "transcript_snapshot", lines}` — 再接続時の全文
-- `{type: "transcript_append", line}` — 1 行追記
-- `{type: "summary_update", summary}` — 要約更新
-- `{type: "questions_update", questions: [{text, answer?, citations?}]}` — 質問リスト
-- `{type: "answer_update", index, question, answer, citations: [{title, url}]}` — 1 件分の回答到着
-- `{type: "token_count", count}` — 累計 token 使用量
+Server → Client:
+- `{type: "transcript_snapshot", lines}` — Full transcript on reconnect
+- `{type: "transcript_append", line}` — Append one line
+- `{type: "summary_update", summary}` — Summary update
+- `{type: "questions_update", questions: [{text, answer?, citations?}]}` — Question list
+- `{type: "answer_update", index, question, answer, citations: [{title, url}]}` — Single answer arrival
+- `{type: "token_count", count}` — Cumulative token usage
 - `{type: "error", where, message}`
 
-## Teams 会議サイドパネル (v3.0)
+## Teams Meeting Side Panel (v3.0)
 
-RealtimeQA を Microsoft Teams 会議のサイドパネルとして実行できます。
-Teams の**ライブキャプション**を入力として利用し、
-開いている本人だけに QA 結果が表示されます。
+RealtimeQA can run as a side panel in Microsoft Teams meetings.
+It uses Teams **live captions** as input, and QA results are visible
+only to the person who opened the panel.
 
 ```
 Teams Meeting (live captions) → Side Panel (React) → WebSocket → FastAPI → MCP + GPT → Answer
 ```
 
-### スタンドアロン版との違い
+### Differences from Standalone Mode
 
-| 項目 | スタンドアロン | Teams サイドパネル |
-|------|---------------|-------------------|
-| 音声入力 | Azure Speech SDK（マイク） | Teams ライブキャプション |
-| 話者識別 | Guest1, Guest2（匿名） | キャプション提供の話者名（※未検証） |
-| 認証 | Speech token | Entra ID (meeting context) |
-| 可視性 | URL を知る全員 | パネルを開いた本人のみ |
-| デプロイ | localhost / 任意 URL | HTTPS 必須 + Teams アプリパッケージ |
+| Item | Standalone | Teams Side Panel |
+|------|-----------|-----------------|
+| Audio input | Azure Speech SDK (microphone) | Teams live captions |
+| Speaker identification | Guest1, Guest2 (anonymous) | Speaker name from captions (unverified) |
+| Authentication | Speech token | Entra ID (meeting context) |
+| Visibility | Anyone with the URL | Only the person who opened the panel |
+| Deployment | localhost / any URL | HTTPS required + Teams app package |
 
-### Teams モードの起動方法
+### How to Launch in Teams Mode
 
-1. **バックエンド + フロントエンドを起動**
+1. **Start the backend + frontend**
    ```powershell
    .\start-dev.ps1
    ```
 
-2. **Dev Tunnel で HTTPS 公開**（ローカルテスト時）
+2. **Expose via Dev Tunnel over HTTPS** (for local testing)
    ```powershell
    .\start-tunnel.ps1
    ```
 
-3. **manifest.json を作成**
+3. **Create manifest.json**
    ```powershell
    cd teams/appPackage
    copy manifest.template.json manifest.json
    ```
-   `manifest.json` を開き、以下を置換:
-   - `{{APP_ID}}` → あなたの Entra App Registration ID
-   - `{{DOMAIN}}` → dev tunnel ドメイン（例: `xxxxxx-5173.jpe1.devtunnels.ms`）
+   Open `manifest.json` and replace the following:
+   - `{{APP_ID}}` → Your Entra App Registration ID
+   - `{{DOMAIN}}` → Your dev tunnel domain (e.g., `xxxxxx-5173.jpe1.devtunnels.ms`)
 
-4. **Teams にサイドロード**
+4. **Sideload into Teams**
    ```powershell
    cd teams/appPackage
    Compress-Archive -Path manifest.json, color.png, outline.png -DestinationPath ..\realtimeqa-teams.zip -Force
    ```
-   Teams → アプリ → カスタムアプリをアップロード → `realtimeqa-teams.zip`
+   Teams → Apps → Upload a custom app → `realtimeqa-teams.zip`
 
-5. **会議で使用**
-   - 会議中に「+」→「RealtimeQA」を追加
-   - サイドパネルが開き、ライブキャプションから自動で QA が実行される
+5. **Use in a meeting**
+   - During a meeting, click "+" → add "RealtimeQA"
+   - The side panel opens and QA runs automatically from live captions
 
-### 前提条件
+### Prerequisites
 
-- Microsoft 365 テナント（サイドロード有効）
-- Teams Admin Center でキャプション/文字起こしを有効化
-- Entra App Registration（`manifest.template.json` 参照）
+- Microsoft 365 tenant (sideloading enabled)
+- Captions/transcription enabled in Teams Admin Center
+- Entra App Registration (see `manifest.template.json`)
 
-詳細は [`teams/README.md`](teams/README.md) を参照。
+For details, see [`teams/README.md`](teams/README.md).
 
-## Dev Scripts / 開発スクリプト (v3.1)
+## Dev Scripts (v3.1)
 
-| スクリプト | 説明 |
-|-----------|------|
-| `start-dev.ps1` | バックエンド (FastAPI:8000) + フロントエンド (Vite:5173) を並行起動 |
-| `start-tunnel.ps1` | Dev Tunnel を起動（Teams テスト用、HTTPS 公開） |
+| Script | Description |
+|--------|-------------|
+| `start-dev.ps1` | Start backend (FastAPI:8000) + frontend (Vite:5173) in parallel |
+| `start-tunnel.ps1` | Start Dev Tunnel (for Teams testing, HTTPS exposure) |
 
 ```powershell
-# 通常開発
+# Normal development
 .\start-dev.ps1
 
-# Teams テスト（別ターミナル）
+# Teams testing (in a separate terminal)
 .\start-tunnel.ps1
 ```
 
-VS Code ユーザーは `Ctrl+Shift+B` でも起動できます（`.vscode/tasks.json` 定義済み）。
+VS Code users can also launch via `Ctrl+Shift+B` (defined in `.vscode/tasks.json`).
 
-## 今後の拡張
+## Roadmap
 
-- [x] ~~Azure Speech SDK に切り替え（多言語 / 話者識別）~~ → v2.0.0 で実装済み
-- [x] ~~Teams 会議サイドパネル統合~~ → v3.0.0 で実装済み
-- [x] ~~開発スクリプト自動化~~ → v3.1.0 で実装済み
-- [ ] Redis SessionStore + 再接続復元 + 認証
-- [x] ~~議事録エクスポート (Markdown/PDF)~~ → v1.1.0 で Markdown エクスポート実装済み
-- [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み
-- [ ] Azure Container Apps へデプロイ
+- [x] ~~Switch to Azure Speech SDK (multilingual / speaker identification)~~ → Implemented in v2.0.0
+- [x] ~~Teams meeting side panel integration~~ → Implemented in v3.0.0
+- [x] ~~Dev script automation~~ → Implemented in v3.1.0
+- [ ] Redis SessionStore + reconnect restore + authentication
+- [x] ~~Meeting notes export (Markdown/PDF)~~ → Markdown export implemented in v1.1.0
+- [x] ~~Incremental question extraction (avoid sending full transcript each time)~~ → Implemented in v1.2.0
+- [ ] Deploy to Azure Container Apps
 
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
-
