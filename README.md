@@ -27,10 +27,17 @@
 
 ```mermaid
 flowchart LR
-    subgraph Browser["🖥️ Browser"]
+    subgraph Standalone["① Standalone (Browser)"]
         MIC["🎤 Microphone"]
         SDK["Azure Speech SDK<br/>(ConversationTranscriber)"]
         UI["React UI<br/>(Transcript / Summary / Q&A)"]
+    end
+
+    subgraph Teams["② Teams Meeting"]
+        CAPTIONS["Live Captions<br/>(speaker + text)"]
+        HOOK["useTeamsTranscript"]
+        PANEL["TeamsSidePanel<br/>(React UI)"]
+        TUNNEL["Dev Tunnel<br/>(HTTPS)"]
     end
 
     subgraph Backend["⚙️ FastAPI Backend"]
@@ -51,8 +58,14 @@ flowchart LR
     SPEECH -->|text + speakerId| SDK
     SDK -->|transcript| UI
     UI -->|WebSocket: transcript| WS
-    Browser -->|fetch token| TOKEN
-    TOKEN -->|AAD token| Browser
+    Standalone -->|fetch token| TOKEN
+    TOKEN -->|AAD token| Standalone
+
+    CAPTIONS -->|caption events| HOOK
+    HOOK -->|text + speaker| PANEL
+    PANEL -->|WebSocket| TUNNEL
+    TUNNEL -->|transcript| WS
+
     WS --> SUM
     WS --> QA
     SUM -->|prompt| FOUNDRY
@@ -61,25 +74,36 @@ flowchart LR
     MCP -->|doc snippets| QA
     QA -->|prompt + context| FOUNDRY
     FOUNDRY -->|answer + citations| QA
-    SUM -->|WebSocket: summary_update| UI
-    QA -->|WebSocket: answer_update| UI
+    SUM -->|WebSocket: summary_update| UI & PANEL
+    QA -->|WebSocket: answer_update| UI & PANEL
 ```
+
+> 📐 Editable diagram: [`docs/architecture.excalidraw`](docs/architecture.excalidraw) — open in [Excalidraw](https://excalidraw.com)
 
 ### Data Flow (Sequence)
 
 ```mermaid
 sequenceDiagram
-    participant B as Browser
+    participant B as Browser / Side Panel
+    participant T as Teams Live Captions
     participant S as Azure Speech
     participant F as FastAPI
     participant G as Azure Foundry
     participant M as Learn MCP
 
+    rect rgb(207, 228, 250)
+    Note over B,S: ① Standalone path
     B->>F: GET /api/speech-token
     F-->>B: AAD token + region
-
     B->>S: audio stream (ConversationTranscriber)
     S-->>B: text + speakerId
+    end
+
+    rect rgb(232, 218, 239)
+    Note over B,T: ② Teams path
+    T-->>B: caption events (speaker + text)
+    Note over B: useTeamsTranscript hook
+    end
 
     B->>F: WS transcript (speaker, text)
     Note over F: debounce 15s / 40 lines
@@ -100,6 +124,8 @@ sequenceDiagram
         F-->>B: answer_update
     end
 ```
+
+> 📐 Editable diagram: [`docs/dataflow.excalidraw`](docs/dataflow.excalidraw) — open in [Excalidraw](https://excalidraw.com)
 
 ## セットアップ (Windows)
 
