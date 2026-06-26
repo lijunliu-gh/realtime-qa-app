@@ -298,8 +298,7 @@ VS Code ユーザーは `Ctrl+Shift+B` でも起動できます（`.vscode/tasks
 - [x] ~~Speech トークン自動更新（約10分で停止する問題を修正）~~ → v3.2.0 で実装済み
 - [ ] セッション永続化 + 再接続復元（長時間会議中のネットワーク切断に対応）
 - [x] ~~議事録エクスポート (Markdown/PDF)~~ → v1.1.0 で Markdown エクスポート実装済み
-- [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み
-
+- [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み- [ ] 要約翻訳機能（会議要約を別の言語にオンデマンド翻訳）
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).

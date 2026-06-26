@@ -294,9 +294,10 @@ VS Code users can also launch via `Ctrl+Shift+B` (defined in `.vscode/tasks.json
 - [x] ~~Dev script automation~~ → Implemented in v3.1.0
 - [x] ~~Multi-language output (summary/QA responds in meeting language)~~ → Implemented in v3.2.0
 - [x] ~~Speech token auto-refresh (fix 10-min timeout)~~ → Implemented in v3.2.0
-- [ ] Session persistence + reconnect restore (survive network drops during long meetings)
+- [x] ~~Session persistence + reconnect restore (survive network drops during long meetings)~~ → Implemented in v3.3.0
 - [x] ~~Meeting notes export (Markdown/PDF)~~ → Markdown export implemented in v1.1.0
 - [x] ~~Incremental question extraction (avoid sending full transcript each time)~~ → Implemented in v1.2.0
+- [ ] Summary translation (translate meeting summary into a different language on demand)
 
 ## License
 
