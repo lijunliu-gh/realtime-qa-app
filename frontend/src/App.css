@@ -564,3 +564,169 @@
   opacity: 0.3;
 }
 
+/* ===== Teams Side Panel overrides ===== */
+.teams-sidepanel {
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+.teams-sidepanel .top-bar.teams-compact {
+  padding: 8px 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.teams-sidepanel .top-bar.teams-compact .top-bar-left {
+  gap: 8px;
+}
+
+.teams-sidepanel .top-bar.teams-compact .brand {
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+.teams-sidepanel .top-bar.teams-compact .top-bar-center {
+  gap: 6px;
+}
+
+.teams-sidepanel .top-bar.teams-compact .btn-neo {
+  padding: 5px 10px;
+  font-size: 0.75rem;
+}
+
+.teams-sidepanel .top-bar.teams-compact .token-badge {
+  font-size: 0.65rem;
+}
+
+.teams-error {
+  font-size: 0.75rem;
+  color: var(--neon-orange, #ffab40);
+  padding: 4px 12px;
+  background: rgba(255, 171, 64, 0.08);
+  border-radius: var(--radius-sm, 6px);
+  text-align: left;
+}
+
+/* Stack cards vertically in side panel */
+.teams-sidepanel .main-content {
+  grid-template-columns: 1fr;
+  gap: 10px;
+  overflow-y: auto;
+}
+
+.teams-sidepanel .card {
+  min-height: 0;
+}
+
+.teams-sidepanel .card-header {
+  padding: 10px 14px;
+}
+
+.teams-sidepanel .card-body {
+  padding: 12px 14px;
+  font-size: 0.82rem;
+}
+
+.teams-sidepanel .qa-item {
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.teams-sidepanel .transcript-content {
+  max-height: 150px;
+  padding: 0 12px 10px;
+  font-size: 0.75rem;
+}
+
+/* ===== Responsive: narrow standalone web ===== */
+@media (max-width: 900px) {
+  .app {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .top-bar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  .top-bar-left {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  .top-bar-center {
+    flex: 1 1 auto;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .top-bar-right {
+    flex: 1 1 auto;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .brand-sub,
+  .brand-powered {
+    display: none;
+  }
+
+  .main-content {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .app {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .top-bar {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .brand {
+    font-size: 1rem;
+    letter-spacing: 1px;
+  }
+
+  .btn-neo {
+    padding: 5px 10px;
+    font-size: 0.72rem;
+  }
+
+  .select-neo {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+
+  .status-badge {
+    font-size: 0.68rem;
+    padding: 3px 7px;
+  }
+
+  .card-header {
+    padding: 10px 14px;
+  }
+
+  .card-body {
+    padding: 12px 14px;
+    font-size: 0.82rem;
+  }
+
+  .card-title {
+    font-size: 0.8rem;
+  }
+
+  .transcript-content {
+    font-size: 0.72rem;
+  }
+}
+
