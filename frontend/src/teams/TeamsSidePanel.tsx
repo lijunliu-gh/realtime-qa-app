@@ -23,18 +23,24 @@ const SPEECH_LANGUAGES = [
   { code: 'de-DE', label: 'Deutsch' },
 ];
 
+const UI_LANGUAGES: { code: UILocale; label: string }[] = [
+  { code: 'zh-CN', label: '🇨🇳' },
+  { code: 'ja-JP', label: '🇯🇵' },
+  { code: 'en-US', label: '🇺🇸' },
+];
+
 export default function TeamsSidePanel() {
   const [transcriptLines, setTranscriptLines] = useState<TranscriptLine[]>([]);
   const [summary, setSummary] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [tokenCount, setTokenCount] = useState(0);
-  const [uiLocale] = useState<UILocale>('ja-JP');
+  const [uiLocale, setUiLocale] = useState<UILocale>('ja-JP');
   const [showTranscript, setShowTranscript] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [translatedSummary, setTranslatedSummary] = useState('');
   const [translateTarget, setTranslateTarget] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
-  const language = 'ja-JP';
+  const [language, setLanguage] = useState('ja-JP');
 
   const t = getMessages(uiLocale);
 
@@ -93,7 +99,7 @@ export default function TeamsSidePanel() {
   const useFallback = !!teamsError;
   const { start, stop } = useSpeechRecognition({
     onResult: handleTranscript,
-    language: 'ja-JP',
+    language,
   });
 
   const handleStart = () => { setIsRunning(true); start(); };
@@ -133,6 +139,25 @@ export default function TeamsSidePanel() {
           </button>
         </div>
         <div className="top-bar-right">
+          <select
+            className="select-neo select-sm"
+            value={language}
+            onChange={(e) => { setLanguage(e.target.value); sendMessage({ type: 'set_language', language: e.target.value }); }}
+          >
+            {SPEECH_LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>{l.label}</option>
+            ))}
+          </select>
+          {UI_LANGUAGES.map((l) => (
+            <button
+              key={l.code}
+              className={`btn-neo btn-sm${uiLocale === l.code ? ' active' : ''}`}
+              onClick={() => setUiLocale(l.code)}
+              style={{ padding: '2px 6px', fontSize: '0.9rem' }}
+            >
+              {l.label}
+            </button>
+          ))}
           <span className="token-badge">{tokenCount} {t.tokens}</span>
         </div>
       </header>
