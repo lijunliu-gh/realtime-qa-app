@@ -91,37 +91,34 @@ sequenceDiagram
     participant G as Azure Foundry
     participant M as Learn MCP
 
-    rect rgb(207, 228, 250)
-    Note over B,S: ① Standalone path
-    B->>F: GET /api/speech-token
-    F-->>B: AAD token + region
-    B->>S: audio stream (ConversationTranscriber)
-    S-->>B: text + speakerId
+    alt ① Standalone — Azure Speech SDK (mic)
+        B->>F: GET /api/speech-token
+        F-->>B: AAD token + region
+        B->>S: audio stream (ConversationTranscriber)
+        S-->>B: text + speakerId
+    else ② Teams Meeting — Live Captions
+        T-->>B: caption events (speaker + text)
+        Note over B: useTeamsTranscript hook
     end
 
-    rect rgb(232, 218, 239)
-    Note over B,T: ② Teams path
-    T-->>B: caption events (speaker + text)
-    Note over B: useTeamsTranscript hook
-    end
+    B->>F: WS {type: transcript, speaker, text}
 
-    B->>F: WS transcript (speaker, text)
-    Note over F: debounce 15s / 40 lines
+    Note over F: debounce 15 s / 40 lines
     F->>G: summarize(transcript)
     G-->>F: rolling summary
-    F-->>B: summary_update
+    F-->>B: WS summary_update
 
     B->>F: WS request_questions
     F->>G: extract questions (incremental)
     G-->>F: questions[]
-    F-->>B: questions_update
+    F-->>B: WS questions_update
 
     loop For each question
         F->>M: search(question)
         M-->>F: doc snippets
         F->>G: answer(question, context)
         G-->>F: answer + citations
-        F-->>B: answer_update
+        F-->>B: WS answer_update
     end
 ```
 
