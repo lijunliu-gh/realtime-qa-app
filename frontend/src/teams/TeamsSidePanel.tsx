@@ -14,6 +14,15 @@ import { getMessages, type UILocale } from '../i18n';
 import type { TranscriptLine, Question } from '../App';
 import '../App.css';
 
+const SPEECH_LANGUAGES = [
+  { code: 'ja-JP', label: '日本語' },
+  { code: 'en-US', label: 'English' },
+  { code: 'zh-CN', label: '中文' },
+  { code: 'ko-KR', label: '한국어' },
+  { code: 'fr-FR', label: 'Français' },
+  { code: 'de-DE', label: 'Deutsch' },
+];
+
 export default function TeamsSidePanel() {
   const [transcriptLines, setTranscriptLines] = useState<TranscriptLine[]>([]);
   const [summary, setSummary] = useState('');
@@ -22,6 +31,10 @@ export default function TeamsSidePanel() {
   const [uiLocale] = useState<UILocale>('ja-JP');
   const [showTranscript, setShowTranscript] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [translatedSummary, setTranslatedSummary] = useState('');
+  const [translateTarget, setTranslateTarget] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const language = 'ja-JP';
 
   const t = getMessages(uiLocale);
 
@@ -29,7 +42,8 @@ export default function TeamsSidePanel() {
     onTranscriptAppend: (line) =>
       setTranscriptLines((prev) => [...prev, line]),
     onTranscriptSnapshot: (lines) => setTranscriptLines(lines),
-    onSummaryUpdate: (s) => setSummary(s),
+    onSummaryUpdate: (s) => { setSummary(s); setTranslatedSummary(''); },
+    onSummaryTranslated: (translation) => { setTranslatedSummary(translation); setIsTranslating(false); },
     onQuestionsUpdate: (qs) =>
       setQuestions(
         qs.map((q, i) => ({
@@ -51,6 +65,9 @@ export default function TeamsSidePanel() {
     onTokenCount: (count) => setTokenCount(count),
     onError: (where, message) => {
       console.error(`[server:${where}] ${message}`);
+    },
+    onConnected: (send) => {
+      send({ type: 'set_language', language });
     },
   });
 
@@ -84,6 +101,12 @@ export default function TeamsSidePanel() {
 
   const handleRequestQuestions = () => {
     sendMessage({ type: 'request_questions' });
+  };
+
+  const handleTranslate = () => {
+    if (!translateTarget || !summary) return;
+    setIsTranslating(true);
+    sendMessage({ type: 'request_translate', target: translateTarget });
   };
 
   return (
@@ -125,12 +148,39 @@ export default function TeamsSidePanel() {
         <div className="card">
           <div className="card-header">
             <span className="card-title">{t.summary}</span>
+            <div className="translate-controls">
+              <select
+                className="select-neo select-sm"
+                value={translateTarget}
+                onChange={(e) => { setTranslateTarget(e.target.value); setTranslatedSummary(''); }}
+              >
+                <option value="">🌐 {t.translateTo}</option>
+                {SPEECH_LANGUAGES.filter(l => l.code !== language).map((l) => (
+                  <option key={l.code} value={l.code}>{l.label}</option>
+                ))}
+              </select>
+              <button
+                className="btn-neo btn-sm"
+                onClick={handleTranslate}
+                disabled={!translateTarget || !summary || isTranslating}
+              >
+                {isTranslating ? '⏳' : '🔄'}
+              </button>
+            </div>
           </div>
           <div className="card-body">
             {!summary && <p className="summary-empty">{t.noSummary}</p>}
             {summary && (
               <div className="summary-text">
                 <ReactMarkdown>{summary}</ReactMarkdown>
+              </div>
+            )}
+            {translatedSummary && (
+              <div className="summary-translation">
+                <div className="translation-divider">― {SPEECH_LANGUAGES.find(l => l.code === translateTarget)?.label || translateTarget} ―</div>
+                <div className="summary-text">
+                  <ReactMarkdown>{translatedSummary}</ReactMarkdown>
+                </div>
               </div>
             )}
           </div>
