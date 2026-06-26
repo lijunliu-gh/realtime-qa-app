@@ -43,6 +43,9 @@ function App() {
   const [uiLocale, setUiLocale] = useState<UILocale>('ja-JP');
   const [showTranscript, setShowTranscript] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [translatedSummary, setTranslatedSummary] = useState('');
+  const [translateTarget, setTranslateTarget] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const t = getMessages(uiLocale);
 
@@ -50,7 +53,8 @@ function App() {
     onTranscriptAppend: (line) =>
       setTranscriptLines((prev) => [...prev, line]),
     onTranscriptSnapshot: (lines) => setTranscriptLines(lines),
-    onSummaryUpdate: (s) => setSummary(s),
+    onSummaryUpdate: (s) => { setSummary(s); setTranslatedSummary(''); },
+    onSummaryTranslated: (translation) => { setTranslatedSummary(translation); setIsTranslating(false); },
     onQuestionsUpdate: (qs) =>
       setQuestions(
         qs.map((q, i) => ({
@@ -99,6 +103,11 @@ function App() {
   const handleStop = () => { setIsRunning(false); stop(); };
   const handleRequestQuestions = () => { sendMessage({ type: 'request_questions' }); };
   const handleExport = () => { window.open(`/export/${sessionId}`, '_blank'); };
+  const handleTranslate = () => {
+    if (!translateTarget || !summary) return;
+    setIsTranslating(true);
+    sendMessage({ type: 'request_translate', target: translateTarget });
+  };
 
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
@@ -172,12 +181,39 @@ function App() {
         <div className="card">
           <div className="card-header">
             <span className="card-title">{t.summary}</span>
+            <div className="translate-controls">
+              <select
+                className="select-neo select-sm"
+                value={translateTarget}
+                onChange={(e) => { setTranslateTarget(e.target.value); setTranslatedSummary(''); }}
+              >
+                <option value="">🌐 {t.translateTo || 'Translate'}</option>
+                {SPEECH_LANGUAGES.filter(l => l.code !== language).map((l) => (
+                  <option key={l.code} value={l.code}>{l.label}</option>
+                ))}
+              </select>
+              <button
+                className="btn-neo btn-sm"
+                onClick={handleTranslate}
+                disabled={!translateTarget || !summary || isTranslating}
+              >
+                {isTranslating ? '⏳' : '🔄'}
+              </button>
+            </div>
           </div>
           <div className="card-body">
             {!summary && <p className="summary-empty">{t.noSummary}</p>}
             {summary && (
               <div className="summary-text">
                 <ReactMarkdown>{summary}</ReactMarkdown>
+              </div>
+            )}
+            {translatedSummary && (
+              <div className="summary-translation">
+                <div className="translation-divider">― {SPEECH_LANGUAGES.find(l => l.code === translateTarget)?.label || translateTarget} ―</div>
+                <div className="summary-text">
+                  <ReactMarkdown>{translatedSummary}</ReactMarkdown>
+                </div>
               </div>
             )}
           </div>

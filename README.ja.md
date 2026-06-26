@@ -194,11 +194,13 @@ teams/
 - `{type: "set_language", language}` — 要約/QA の出力言語を設定（例: `"zh-CN"`, `"en-US"`）
 - `{type: "request_summary"}` — 強制要約
 - `{type: "request_questions"}` — 質問抽出 + 回答生成をキック
+- `{type: "request_translate", target}` — 現在の要約を指定言語に翻訳
 
 サーバ → クライアント:
 - `{type: "transcript_snapshot", lines}` — 再接続時の全文
 - `{type: "transcript_append", line}` — 1 行追記
 - `{type: "summary_update", summary}` — 要約更新
+- `{type: "summary_translated", translation, target_language}` — 要約の翻訳結果
 - `{type: "questions_update", questions: [{text, answer?, citations?}]}` — 質問リスト
 - `{type: "answer_update", index, question, answer, citations: [{title, url}]}` — 1 件分の回答到着
 - `{type: "token_count", count}` — 累計 token 使用量
@@ -298,7 +300,7 @@ VS Code ユーザーは `Ctrl+Shift+B` でも起動できます（`.vscode/tasks
 - [x] ~~Speech トークン自動更新（約10分で停止する問題を修正）~~ → v3.2.0 で実装済み
 - [ ] セッション永続化 + 再接続復元（長時間会議中のネットワーク切断に対応）
 - [x] ~~議事録エクスポート (Markdown/PDF)~~ → v1.1.0 で Markdown エクスポート実装済み
-- [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み- [ ] 要約翻訳機能（会議要約を別の言語にオンデマンド翻訳）
+- [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み- [x] ~~要約翻訳機能（会議要約を別の言語にオンデマンド翻訳）~~ → v3.4.0 で実装済み
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).

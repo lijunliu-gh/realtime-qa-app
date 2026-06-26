@@ -32,6 +32,7 @@ interface WebSocketHookOptions {
   onTranscriptAppend: (line: { speaker: string; text: string }) => void;
   onTranscriptSnapshot: (lines: { speaker: string; text: string }[]) => void;
   onSummaryUpdate: (summary: string) => void;
+  onSummaryTranslated?: (translation: string, targetLanguage: string) => void;
   onQuestionsUpdate: (questions: ServerQuestion[]) => void;
   onAnswerUpdate: (payload: {
     index: number;
@@ -107,6 +108,9 @@ export function useWebSocket(options: WebSocketHookOptions) {
             break;
           case 'summary_update':
             optionsRef.current.onSummaryUpdate(data.summary);
+            break;
+          case 'summary_translated':
+            optionsRef.current.onSummaryTranslated?.(data.translation, data.target_language);
             break;
           case 'questions_update':
             optionsRef.current.onQuestionsUpdate(data.questions);

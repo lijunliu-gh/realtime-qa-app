@@ -192,11 +192,13 @@ teams/
 - `{type: "set_language", language}` —— 设置摘要/问答的输出语言（如 `"zh-CN"`, `"en-US"`）
 - `{type: "request_summary"}` —— 强制生成摘要
 - `{type: "request_questions"}` —— 触发问题提取 + 回答生成
+- `{type: "request_translate", target}` —— 将当前摘要翻译为指定语言
 
 服务器 → 客户端：
 - `{type: "transcript_snapshot", lines}` —— 重连时的完整转录记录
 - `{type: "transcript_append", line}` —— 追加一行
 - `{type: "summary_update", summary}` —— 摘要更新
+- `{type: "summary_translated", translation, target_language}` —— 摘要翻译结果
 - `{type: "questions_update", questions: [{text, answer?, citations?}]}` —— 问题列表
 - `{type: "answer_update", index, question, answer, citations: [{title, url}]}` —— 单个回答到达
 - `{type: "token_count", count}` —— 累计 Token 用量
@@ -295,7 +297,7 @@ VS Code 用户也可通过 `Ctrl+Shift+B` 启动（定义在 `.vscode/tasks.json
 - [x] ~~Speech Token 自动刷新（修复约10分钟停止的问题）~~ → 已在 v3.2.0 中实现
 - [ ] 会话持久化 + 重连恢复（应对长时间会议中的网络中断）
 - [x] ~~会议记录导出（Markdown/PDF）~~ → Markdown 导出已在 v1.1.0 中实现
-- [x] ~~增量问题提取（避免每次发送完整转录）~~ → 已在 v1.2.0 中实现- [ ] 摘要翻译功能（将会议摘要按需翻译成其他语言）
+- [x] ~~增量问题提取（避免每次发送完整转录）~~ → 已在 v1.2.0 中实现- [x] ~~摘要翻译功能（将会议摘要按需翻译成其他语言）~~ → 已在 v3.4.0 中实现
 ## 许可证
 
 本项目使用 [Apache License 2.0](LICENSE) 许可证。

@@ -192,11 +192,13 @@ Client → Server:
 - `{type: "set_language", language}` — Set output language for summary/QA (e.g. `"zh-CN"`, `"en-US"`)
 - `{type: "request_summary"}` — Force summary
 - `{type: "request_questions"}` — Kick off question extraction + answer generation
+- `{type: "request_translate", target}` — Translate current summary into target language
 
 Server → Client:
 - `{type: "transcript_snapshot", lines}` — Full transcript on reconnect
 - `{type: "transcript_append", line}` — Append one line
 - `{type: "summary_update", summary}` — Summary update
+- `{type: "summary_translated", translation, target_language}` — Translation of current summary
 - `{type: "questions_update", questions: [{text, answer?, citations?}]}` — Question list
 - `{type: "answer_update", index, question, answer, citations: [{title, url}]}` — Single answer arrival
 - `{type: "token_count", count}` — Cumulative token usage
@@ -297,7 +299,7 @@ VS Code users can also launch via `Ctrl+Shift+B` (defined in `.vscode/tasks.json
 - [x] ~~Session persistence + reconnect restore (survive network drops during long meetings)~~ → Implemented in v3.3.0
 - [x] ~~Meeting notes export (Markdown/PDF)~~ → Markdown export implemented in v1.1.0
 - [x] ~~Incremental question extraction (avoid sending full transcript each time)~~ → Implemented in v1.2.0
-- [ ] Summary translation (translate meeting summary into a different language on demand)
+- [x] ~~Summary translation (translate meeting summary into a different language on demand)~~ → Implemented in v3.4.0
 
 ## License
 

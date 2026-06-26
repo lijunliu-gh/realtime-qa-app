@@ -185,6 +185,12 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                         _extract_questions(websocket, session)
                     )
 
+                elif msg_type == "request_translate":
+                    target = (message.get("target") or "en-US").strip()
+                    asyncio.create_task(
+                        _translate_summary(websocket, session, target)
+                    )
+
                 else:
                     await _send_error(
                         websocket,
@@ -337,6 +343,30 @@ async def _run_summary(websocket: WebSocket, session: SessionState) -> None:
             "summary": summary,
         })
         await _broadcast_tokens(websocket, session, used)
+
+
+async def _translate_summary(websocket: WebSocket, session: SessionState,
+                              target_language: str) -> None:
+    """Translate the current summary into the target language on demand."""
+    if not session.summary:
+        await _send_error(websocket, "No summary to translate", "translate")
+        return
+
+    try:
+        translated, used = await summarizer.translate(
+            session.summary, target_language
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("Translation failed")
+        await _send_error(websocket, str(exc), "translate")
+        return
+
+    await _safe_send(websocket, {
+        "type": "summary_translated",
+        "translation": translated,
+        "target_language": target_language,
+    })
+    await _broadcast_tokens(websocket, session, used)
 
 
 async def _extract_questions(websocket: WebSocket,

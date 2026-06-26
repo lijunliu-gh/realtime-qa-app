@@ -23,6 +23,7 @@ export interface Messages {
   hideTranscript: string;
   pending: string;
   citations: string;
+  translateTo: string;
 }
 
 const zh: Messages = {
@@ -48,6 +49,7 @@ const zh: Messages = {
   hideTranscript: '收起原始记录',
   pending: '生成中…',
   citations: '引用来源',
+  translateTo: '翻译为',
 };
 
 const ja: Messages = {
@@ -73,6 +75,7 @@ const ja: Messages = {
   hideTranscript: '文字起こしを非表示',
   pending: '生成中…',
   citations: '引用元',
+  translateTo: '翻訳先',
 };
 
 const en: Messages = {
@@ -98,6 +101,7 @@ const en: Messages = {
   hideTranscript: 'Hide Transcript',
   pending: 'Generating…',
   citations: 'Sources',
+  translateTo: 'Translate to',
 };
 
 const locales: Record<UILocale, Messages> = {

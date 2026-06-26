@@ -52,6 +52,16 @@ def _lang_instruction(language: str) -> str:
         return f"\nAnswer in the language matching locale: {language}."
 
 
+def _lang_name(language: str) -> str:
+    """Return human-readable language name for translation prompts."""
+    mapping = {
+        "ja": "Japanese", "en": "English", "zh": "Chinese",
+        "ko": "Korean", "fr": "French", "de": "German",
+    }
+    prefix = language.split("-")[0]
+    return mapping.get(prefix, language)
+
+
 def _normalize_endpoint(raw: str) -> str:
     raw = (raw or "").strip().rstrip("/")
     # Strip trailing /openai/v1 or /openai if present; SDK appends it.
@@ -190,6 +200,33 @@ class SummarizerService:
         )
         text = response.choices[0].message.content or ""
         return text, _usage_tokens(response)
+
+    async def translate(
+        self, text: str, target_language: str
+    ) -> tuple[str, int]:
+        """Translate text into the target language."""
+        if not text.strip():
+            return "", 0
+
+        lang_name = _lang_name(target_language)
+        response = await self.client.chat.completions.create(
+            model=self.deployment,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        f"You are a translator. Translate the following text into {lang_name}. "
+                        "Preserve the original formatting (numbered lists, bullet points, etc.). "
+                        "Do not add explanations or commentary — output only the translation."
+                    ),
+                },
+                {"role": "user", "content": text},
+            ],
+            temperature=0.3,
+            max_completion_tokens=1500,
+        )
+        translated = response.choices[0].message.content or ""
+        return translated, _usage_tokens(response)
 
     async def extract_questions(
         self,
