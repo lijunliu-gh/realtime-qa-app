@@ -81,6 +81,8 @@ class SessionState:
         self.pending_summary_task: asyncio.Task | None = None
         # Set of question texts currently being answered (to dedupe).
         self.in_flight_answers: set[str] = set()
+        # Language for LLM output (set by client, defaults to ja-JP).
+        self.language: str = "ja-JP"
 
 
 sessions: dict[str, SessionState] = {}
@@ -127,6 +129,11 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             try:
                 if msg_type == "transcript":
                     await _handle_transcript(websocket, session, message)
+
+                elif msg_type == "set_language":
+                    lang = (message.get("language") or "ja-JP").strip()
+                    session.language = lang
+                    logger.info("Session language set to %s", lang)
 
                 elif msg_type == "request_summary":
                     # Force-flush: cancel pending debounce and run now.
@@ -261,6 +268,7 @@ async def _run_summary(websocket: WebSocket, session: SessionState) -> None:
             summary, used = await summarizer.update_summary(
                 previous_summary=session.summary,
                 new_transcript=new_text,
+                language=session.language,
             )
         except Exception as exc:  # noqa: BLE001
             logger.exception("Summarization failed")
@@ -311,6 +319,7 @@ async def _extract_questions(websocket: WebSocket,
             new_text,
             existing_questions=session.questions,
             summary=session.summary,
+            language=session.language,
         )
     except Exception as exc:  # noqa: BLE001
         logger.exception("Question extraction failed")
@@ -365,6 +374,7 @@ async def _answer_question(
                 question=question,
                 snippets=snippet_dicts,
                 conversation_summary=session.summary,
+                language=session.language,
             )
         except Exception as exc:  # noqa: BLE001
             logger.exception("Answer synthesis failed for %r", question)

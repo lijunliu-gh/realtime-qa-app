@@ -189,6 +189,7 @@ teams/
 
 Client → Server:
 - `{type: "transcript", speaker, text}` — New utterance
+- `{type: "set_language", language}` — Set output language for summary/QA (e.g. `"zh-CN"`, `"en-US"`)
 - `{type: "request_summary"}` — Force summary
 - `{type: "request_questions"}` — Kick off question extraction + answer generation
 
@@ -261,6 +262,14 @@ Teams Meeting (live captions) → Side Panel (React) → WebSocket → FastAPI �
 
 For details, see [`teams/README.md`](teams/README.md).
 
+## Multi-language Output (v3.2)
+
+Summary, question extraction, and Q&A answers are now generated in the **same language as the speech recognition setting**. The frontend sends `{type: "set_language", language}` at session start, and the backend dynamically constructs prompts for the selected locale.
+
+Supported output languages: Japanese, English, Chinese, Korean, French, German (extensible).
+
+Additionally, the Speech SDK token is now **auto-refreshed every 8 minutes** with automatic error recovery, fixing the issue where transcription stopped after ~10 minutes.
+
 ## Dev Scripts (v3.1)
 
 | Script | Description |
@@ -283,6 +292,8 @@ VS Code users can also launch via `Ctrl+Shift+B` (defined in `.vscode/tasks.json
 - [x] ~~Switch to Azure Speech SDK (multilingual / speaker identification)~~ → Implemented in v2.0.0
 - [x] ~~Teams meeting side panel integration~~ → Implemented in v3.0.0
 - [x] ~~Dev script automation~~ → Implemented in v3.1.0
+- [x] ~~Multi-language output (summary/QA responds in meeting language)~~ → Implemented in v3.2.0
+- [x] ~~Speech token auto-refresh (fix 10-min timeout)~~ → Implemented in v3.2.0
 - [ ] Redis SessionStore + reconnect restore + authentication
 - [x] ~~Meeting notes export (Markdown/PDF)~~ → Markdown export implemented in v1.1.0
 - [x] ~~Incremental question extraction (avoid sending full transcript each time)~~ → Implemented in v1.2.0

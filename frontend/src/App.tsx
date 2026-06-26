@@ -88,7 +88,11 @@ function App() {
 
   const { start, stop } = useSpeechRecognition({ onResult: handleTranscript, language });
 
-  const handleStart = () => { setIsRunning(true); start(); };
+  const handleStart = () => {
+    setIsRunning(true);
+    sendMessage({ type: 'set_language', language });
+    start();
+  };
   const handleStop = () => { setIsRunning(false); stop(); };
   const handleRequestQuestions = () => { sendMessage({ type: 'request_questions' }); };
   const handleExport = () => { window.open(`/export/${sessionId}`, '_blank'); };
