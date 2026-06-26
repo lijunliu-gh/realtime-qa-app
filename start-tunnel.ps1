@@ -6,9 +6,16 @@
 #   devtunnel user login
 
 $ErrorActionPreference = 'Stop'
+$root = $PSScriptRoot
 
 Write-Host "Starting dev tunnel on port 5173..." -ForegroundColor Cyan
-Write-Host "Press Ctrl+C to stop." -ForegroundColor DarkGray
-Write-Host ""
 
-devtunnel host --port-numbers 5173 --allow-anonymous
+$tunnelJob = Start-Process powershell -ArgumentList @(
+    '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command',
+    "Set-Location '$root'; devtunnel host --port-numbers 5173 --allow-anonymous"
+) -PassThru
+
+Write-Host ""
+Write-Host "=== Dev Tunnel ===" -ForegroundColor Cyan
+Write-Host "  Tunnel PID: $($tunnelJob.Id)" -ForegroundColor Green
+Write-Host "  Close the window to stop." -ForegroundColor DarkGray

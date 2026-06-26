@@ -6,13 +6,13 @@ $root = $PSScriptRoot
 
 # --- Backend ---
 $backendJob = Start-Process powershell -ArgumentList @(
-    '-NoExit', '-Command',
-    "Set-Location '$root\backend'; & '.\.venv\Scripts\Activate.ps1'; python -m uvicorn main:app --reload --port 8000"
+    '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command',
+    "Set-Location '$root\backend'; & '.\.\.venv\Scripts\python.exe' -m uvicorn main:app --reload --port 8000"
 ) -PassThru
 
 # --- Frontend ---
 $frontendJob = Start-Process powershell -ArgumentList @(
-    '-NoExit', '-Command',
+    '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command',
     "Set-Location '$root\frontend'; npx.cmd vite --port 5173"
 ) -PassThru
 
