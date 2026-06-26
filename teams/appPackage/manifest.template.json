@@ -1,0 +1,54 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/teams/v1.17/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.17",
+  "version": "1.0.0",
+  "id": "{{APP_ID}}",
+  "developer": {
+    "name": "Your Name",
+    "websiteUrl": "https://github.com/lijunliu-gh/realtime-qa-app",
+    "privacyUrl": "https://github.com/lijunliu-gh/realtime-qa-app",
+    "termsOfUseUrl": "https://github.com/lijunliu-gh/realtime-qa-app"
+  },
+  "name": {
+    "short": "RealtimeQA",
+    "full": "Real-time Q&A with Microsoft Learn Citations"
+  },
+  "description": {
+    "short": "Real-time meeting Q&A with cited docs",
+    "full": "Listens to meeting captions in real-time, extracts technical questions, and generates answers with Microsoft Learn citations."
+  },
+  "icons": {
+    "color": "color.png",
+    "outline": "outline.png"
+  },
+  "accentColor": "#6b2fa0",
+  "configurableTabs": [
+    {
+      "configurationUrl": "https://{{DOMAIN}}/teams/config",
+      "canUpdateConfiguration": false,
+      "scopes": ["groupChat"],
+      "context": ["meetingSidePanel", "meetingStage"]
+    }
+  ],
+  "staticTabs": [
+    {
+      "entityId": "realtimeqa",
+      "name": "RealtimeQA",
+      "contentUrl": "https://{{DOMAIN}}/teams/sidepanel",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity", "messageTeamMembers"],
+  "devicePermissions": ["media"],
+  "validDomains": ["{{DOMAIN}}"],
+  "authorization": {
+    "permissions": {
+      "resourceSpecific": [
+        {
+          "name": "MeetingStage.Write.Chat",
+          "type": "Delegated"
+        }
+      ]
+    }
+  }
+}

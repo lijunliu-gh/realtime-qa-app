@@ -17,6 +17,10 @@ frontend/.env
 frontend/.env.local
 frontend/.env.*.local
 
+# Teams app package (contains personal dev tunnel URL / app ID)
+teams/appPackage/manifest.json
+teams/*.zip
+
 # Logs
 *.log
 npm-debug.log*

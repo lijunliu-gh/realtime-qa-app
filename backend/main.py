@@ -397,11 +397,12 @@ async def health():
 async def speech_token():
     """Issue a short-lived Entra ID token for Azure Speech SDK (browser)."""
     region = os.getenv("AZURE_SPEECH_REGION", "eastus2")
-    resource_id = os.getenv(
-        "AZURE_SPEECH_RESOURCE_ID",
-        "/subscriptions/b2c6bae2-ce72-40dc-a9da-977899a9febe/resourceGroups"
-        "/RefreshSub/providers/Microsoft.CognitiveServices/accounts/MSFoundryLab",
-    )
+    resource_id = os.getenv("AZURE_SPEECH_RESOURCE_ID", "")
+    if not resource_id:
+        return JSONResponse(
+            {"error": "AZURE_SPEECH_RESOURCE_ID not configured in backend/.env"},
+            status_code=500,
+        )
     try:
         from azure.identity import DefaultAzureCredential, InteractiveBrowserCredential, ChainedTokenCredential
         tenant_id = os.getenv("AZURE_TENANT_ID")

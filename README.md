@@ -8,6 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6.svg?logo=typescript&logoColor=white)](frontend/)
 [![Azure Speech](https://img.shields.io/badge/Azure-Speech_SDK-0078d4.svg?logo=microsoft-azure&logoColor=white)](https://learn.microsoft.com/azure/ai-services/speech-service/)
 [![Foundry](https://img.shields.io/badge/Microsoft-Foundry-6b2fa0.svg?logo=microsoft&logoColor=white)](https://learn.microsoft.com/azure/ai-services/openai/)
+[![Teams](https://img.shields.io/badge/Microsoft-Teams-6264a7.svg?logo=microsoft-teams&logoColor=white)](teams/)
 
 > Real-time technical Q&A and meeting-notes web app — transcribe speech, summarize conversations, and answer questions with cited Microsoft Learn docs.
 
@@ -20,6 +21,7 @@
 | ① | **Live Transcription** — 音声をリアルタイムで文字起こし（多言語 / 話者識別対応） | Azure Speech SDK |
 | ② | **Rolling Summary** — 会話を自動要約 | Azure Foundry (GPT) |
 | ③ | **Q&A with Citations** — 質問を抽出し引用付き回答を生成 | Foundry + Microsoft Learn MCP |
+| ④ | **Teams Side Panel** — Teams 会議のライブキャプションから QA を実行 | Teams JS SDK + Live Captions |
 
 ## Architecture / アーキテクチャ
 
@@ -190,11 +192,22 @@ frontend/
     App.tsx                   # state コンテナ
     hooks/
       useWebSocket.ts         # WS プロトコル (transcript / summary / questions / answer)
-      useSpeechRecognition.ts # Web Speech API ラッパ + 自動再開
+      useSpeechRecognition.ts # Azure Speech SDK ラッパ + 話者識別
+      useTeamsTranscript.ts   # Teams ライブキャプション → WS ブリッジ
+    teams/
+      TeamsConfig.tsx         # Teams タブ設定ページ
+      TeamsSidePanel.tsx      # サイドパネル UI
     components/
       TranscriptionPanel.tsx
       SummaryPanel.tsx
       QAPanel.tsx             # 質問 + 回答 + 引用 URL
+
+teams/
+  README.md                   # Teams 統合の詳細ドキュメント
+  appPackage/
+    manifest.template.json    # Teams マニフェストテンプレート（占位符）
+    color.png                 # 192x192 アイコン
+    outline.png               # 32x32 アウトラインアイコン
 ```
 
 ## WebSocket プロトコル
@@ -213,9 +226,67 @@ frontend/
 - `{type: "token_count", count}` — 累計 token 使用量
 - `{type: "error", where, message}`
 
+## Teams 会議サイドパネル (v3.0)
+
+RealtimeQA を Microsoft Teams 会議のサイドパネルとして実行できます。
+Teams の**ライブキャプション**を入力として利用し、
+開いている本人だけに QA 結果が表示されます。
+
+```
+Teams Meeting (live captions) → Side Panel (React) → WebSocket → FastAPI → MCP + GPT → Answer
+```
+
+### スタンドアロン版との違い
+
+| 項目 | スタンドアロン | Teams サイドパネル |
+|------|---------------|-------------------|
+| 音声入力 | Azure Speech SDK（マイク） | Teams ライブキャプション |
+| 話者識別 | Guest1, Guest2（匿名） | キャプション提供の話者名（※未検証） |
+| 認証 | Speech token | Entra ID (meeting context) |
+| 可視性 | URL を知る全員 | パネルを開いた本人のみ |
+| デプロイ | localhost / 任意 URL | HTTPS 必須 + Teams アプリパッケージ |
+
+### Teams モードの起動方法
+
+1. **バックエンド + フロントエンドを起動**（上記セットアップと同じ）
+
+2. **Dev Tunnel で HTTPS 公開**（ローカルテスト時）
+   ```powershell
+   devtunnel host --port-numbers 5173 --allow-anonymous
+   ```
+
+3. **manifest.json を作成**
+   ```powershell
+   cd teams/appPackage
+   copy manifest.template.json manifest.json
+   ```
+   `manifest.json` を開き、以下を置換:
+   - `{{APP_ID}}` → あなたの Entra App Registration ID
+   - `{{DOMAIN}}` → dev tunnel ドメイン（例: `xxxxxx-5173.jpe1.devtunnels.ms`）
+
+4. **Teams にサイドロード**
+   ```powershell
+   cd teams/appPackage
+   Compress-Archive -Path manifest.json, color.png, outline.png -DestinationPath ..\realtimeqa-teams.zip -Force
+   ```
+   Teams → アプリ → カスタムアプリをアップロード → `realtimeqa-teams.zip`
+
+5. **会議で使用**
+   - 会議中に「+」→「RealtimeQA」を追加
+   - サイドパネルが開き、ライブキャプションから自動で QA が実行される
+
+### 前提条件
+
+- Microsoft 365 テナント（サイドロード有効）
+- Teams Admin Center でキャプション/文字起こしを有効化
+- Entra App Registration（`manifest.template.json` 参照）
+
+詳細は [`teams/README.md`](teams/README.md) を参照。
+
 ## 今後の拡張
 
 - [x] ~~Azure Speech SDK に切り替え（多言語 / 話者識別）~~ → v2.0.0 で実装済み
+- [x] ~~Teams 会議サイドパネル統合~~ → v3.0.0 で実装済み
 - [ ] Redis SessionStore + 再接続復元 + 認証
 - [x] ~~議事録エクスポート (Markdown/PDF)~~ → v1.1.0 で Markdown エクスポート実装済み
 - [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み
