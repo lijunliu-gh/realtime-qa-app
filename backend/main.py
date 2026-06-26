@@ -102,17 +102,57 @@ async def _send_error(websocket: WebSocket, message: str, where: str) -> None:
     )
 
 
+# How long to keep a session alive after WebSocket disconnect (seconds).
+SESSION_LINGER_SECONDS = float(os.getenv("SESSION_LINGER_SECONDS", "300"))
+
+
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
     await websocket.accept()
-    session = SessionState()
-    sessions[session_id] = session
 
-    # Send initial snapshot so a reconnecting client can rebuild state.
+    # Reuse existing session on reconnect; create new only if none exists.
+    if session_id in sessions:
+        session = sessions[session_id]
+        # Cancel any pending cleanup task from previous disconnect.
+        cleanup_task = getattr(session, "_cleanup_task", None)
+        if cleanup_task and not cleanup_task.done():
+            cleanup_task.cancel()
+            session._cleanup_task = None
+        logger.info("Session %s reconnected (%d lines kept)",
+                    session_id, len(session.transcript_lines))
+    else:
+        session = SessionState()
+        sessions[session_id] = session
+        logger.info("Session %s created", session_id)
+
+    # Send full state snapshot so a reconnecting client can rebuild UI.
     await _safe_send(websocket, {
         "type": "transcript_snapshot",
         "lines": session.transcript_lines,
     })
+    if session.summary:
+        await _safe_send(websocket, {
+            "type": "summary_update",
+            "summary": session.summary,
+        })
+    if session.questions:
+        questions_payload = [
+            {
+                "text": q,
+                "answer": session.answers.get(q, {}).get("answer"),
+                "citations": session.answers.get(q, {}).get("citations", []),
+            }
+            for q in session.questions
+        ]
+        await _safe_send(websocket, {
+            "type": "questions_update",
+            "questions": questions_payload,
+        })
+    if session.token_count > 0:
+        await _safe_send(websocket, {
+            "type": "token_count",
+            "count": session.token_count,
+        })
 
     try:
         while True:
@@ -162,7 +202,21 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         logger.exception("Unexpected WebSocket error")
     finally:
         _cancel_pending(session)
-        sessions.pop(session_id, None)
+        # Don't delete session immediately; keep it for reconnect.
+        session._cleanup_task = asyncio.create_task(
+            _deferred_cleanup(session_id)
+        )
+
+
+async def _deferred_cleanup(session_id: str) -> None:
+    """Remove session from memory after a linger period if not reconnected."""
+    try:
+        await asyncio.sleep(SESSION_LINGER_SECONDS)
+    except asyncio.CancelledError:
+        return
+    sessions.pop(session_id, None)
+    logger.info("Session %s cleaned up after %ss linger",
+                session_id, SESSION_LINGER_SECONDS)
 
 
 async def _handle_transcript(websocket: WebSocket, session: SessionState,

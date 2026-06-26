@@ -41,12 +41,24 @@ interface WebSocketHookOptions {
   }) => void;
   onTokenCount: (count: number) => void;
   onError?: (where: string, message: string) => void;
+  /** Called on every successful WS open (including reconnects). */
+  onConnected?: (send: (msg: Record<string, unknown>) => void) => void;
+}
+
+const SESSION_STORAGE_KEY = 'realtimeqa_session_id';
+
+function getOrCreateSessionId(): string {
+  const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
+  if (stored) return stored;
+  const id = crypto.randomUUID();
+  sessionStorage.setItem(SESSION_STORAGE_KEY, id);
+  return id;
 }
 
 export function useWebSocket(options: WebSocketHookOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const sessionIdRef = useRef(crypto.randomUUID());
+  const sessionIdRef = useRef(getOrCreateSessionId());
   const optionsRef = useRef(options);
   optionsRef.current = options;
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -61,7 +73,15 @@ export function useWebSocket(options: WebSocketHookOptions) {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        if (mountedRef.current) setIsConnected(true);
+        if (mountedRef.current) {
+          setIsConnected(true);
+          // Notify caller so they can re-send session state (e.g. language).
+          optionsRef.current.onConnected?.((msg) => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify(msg));
+            }
+          });
+        }
       };
 
       ws.onclose = () => {

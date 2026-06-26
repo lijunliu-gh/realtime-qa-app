@@ -73,6 +73,10 @@ function App() {
     onError: (where, message) => {
       console.error(`[server:${where}] ${message}`);
     },
+    onConnected: (send) => {
+      // Re-send language on every WS open (covers reconnects & backend restarts).
+      send({ type: 'set_language', language });
+    },
   });
 
   const handleTranscript = useCallback(
@@ -90,7 +94,6 @@ function App() {
 
   const handleStart = () => {
     setIsRunning(true);
-    sendMessage({ type: 'set_language', language });
     start();
   };
   const handleStop = () => { setIsRunning(false); stop(); };
