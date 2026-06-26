@@ -25,60 +25,9 @@
 
 ## Architecture / アーキテクチャ
 
-```mermaid
-flowchart LR
-    subgraph Standalone["① Standalone (Browser)"]
-        MIC["🎤 Microphone"]
-        SDK["Azure Speech SDK<br/>(ConversationTranscriber)"]
-        UI["React UI<br/>(Transcript / Summary / Q&A)"]
-    end
+![Architecture](docs/architecture.svg)
 
-    subgraph Teams["② Teams Meeting"]
-        CAPTIONS["Live Captions<br/>(speaker + text)"]
-        HOOK["useTeamsTranscript"]
-        PANEL["TeamsSidePanel<br/>(React UI)"]
-        TUNNEL["Dev Tunnel<br/>(HTTPS)"]
-    end
-
-    subgraph Backend["⚙️ FastAPI Backend"]
-        TOKEN["/api/speech-token"]
-        WS["WebSocket Hub"]
-        SUM["Summarizer"]
-        QA["Q&A Pipeline"]
-    end
-
-    subgraph Cloud["☁️ Azure / Microsoft"]
-        SPEECH["Azure AI Services<br/>(Speech)"]
-        FOUNDRY["Azure Foundry<br/>(GPT model)"]
-        MCP["Microsoft Learn MCP<br/>learn.microsoft.com/api/mcp"]
-    end
-
-    MIC -->|audio stream| SDK
-    SDK -->|recognize| SPEECH
-    SPEECH -->|text + speakerId| SDK
-    SDK -->|transcript| UI
-    UI -->|WebSocket: transcript| WS
-    Standalone -->|fetch token| TOKEN
-    TOKEN -->|AAD token| Standalone
-
-    CAPTIONS -->|caption events| HOOK
-    HOOK -->|text + speaker| PANEL
-    PANEL -->|WebSocket| TUNNEL
-    TUNNEL -->|transcript| WS
-
-    WS --> SUM
-    WS --> QA
-    SUM -->|prompt| FOUNDRY
-    FOUNDRY -->|summary| SUM
-    QA -->|search query| MCP
-    MCP -->|doc snippets| QA
-    QA -->|prompt + context| FOUNDRY
-    FOUNDRY -->|answer + citations| QA
-    SUM -->|WebSocket: summary_update| UI & PANEL
-    QA -->|WebSocket: answer_update| UI & PANEL
-```
-
-> 📐 Editable diagram: [`docs/architecture.excalidraw`](docs/architecture.excalidraw) — open in [Excalidraw](https://excalidraw.com)
+> 📐 Editable source: [`docs/architecture.excalidraw`](docs/architecture.excalidraw) — open in [Excalidraw](https://excalidraw.com)
 
 ### Data Flow (Sequence)
 
