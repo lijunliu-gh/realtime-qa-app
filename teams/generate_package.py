@@ -4,7 +4,7 @@ import zipfile
 import json
 from PIL import Image, ImageDraw, ImageFont
 
-OUT_DIR = r"c:\GHCE-REPO\realtime-qa-app\teams\appPackage"
+OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "appPackage")
 
 def make_color_icon(path: str, size: int = 192):
     """192x192 color icon: purple rounded square with 'QA' text."""

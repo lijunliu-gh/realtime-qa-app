@@ -73,7 +73,7 @@ sequenceDiagram
 
 > 📐 Editable diagram: [`docs/dataflow.excalidraw`](docs/dataflow.excalidraw) — open in [Excalidraw](https://excalidraw.com)
 
-## Setup (Windows)
+## Setup
 
 ### 0. Prerequisites
 - Python 3.11+
@@ -108,7 +108,7 @@ Enable Entra ID authentication using one of the following methods:
 
 | Method | Command |
 |--------|---------|
-| **Azure CLI** (recommended) | `winget install Microsoft.AzureCLI` → open a new shell → `az login` |
+| **Azure CLI** (recommended) | **Windows:** `winget install Microsoft.AzureCLI` / **macOS:** `brew install azure-cli` → open a new shell → `az login` |
 | **Az PowerShell** | `Install-Module Az -Scope CurrentUser` → `Connect-AzAccount` |
 | **Do nothing** | On first backend startup, a browser window will open prompting you to sign in (via `azure-identity-broker`) |
 
@@ -116,10 +116,20 @@ The backend tries `DefaultAzureCredential` first, then falls back to `Interactiv
 
 ### 3. Start the Backend
 
+**Windows (PowerShell):**
 ```powershell
 cd backend
 py -3 -m venv .venv
 .\.venv\Scripts\Activate
+pip install -r requirements.txt
+python -m uvicorn main:app --reload --port 8000
+```
+
+**macOS / Linux:**
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 python -m uvicorn main:app --reload --port 8000
 ```
@@ -174,8 +184,10 @@ frontend/
       SummaryPanel.tsx
       QAPanel.tsx             # Questions + answers + citation URLs
 
-start-dev.ps1               # Start backend + frontend in parallel
-start-tunnel.ps1            # Start Dev Tunnel (for Teams testing)
+start-dev.ps1               # Start backend + frontend in parallel (Windows)
+start-dev.sh                # Start backend + frontend in parallel (macOS / Linux)
+start-tunnel.ps1            # Start Dev Tunnel (for Teams testing) (Windows)
+start-tunnel.sh             # Start Dev Tunnel (macOS / Linux)
 
 teams/
   README.md                   # Detailed Teams integration documentation
@@ -228,12 +240,20 @@ Teams Meeting (live captions) → Side Panel (React) → WebSocket → FastAPI �
 
 1. **Start the backend + frontend**
    ```powershell
+   # Windows
    .\start-dev.ps1
+
+   # macOS / Linux
+   ./start-dev.sh
    ```
 
 2. **Expose via Dev Tunnel over HTTPS** (for local testing)
    ```powershell
+   # Windows
    .\start-tunnel.ps1
+
+   # macOS / Linux
+   ./start-tunnel.sh
    ```
 
 3. **Create manifest.json**
@@ -247,8 +267,13 @@ Teams Meeting (live captions) → Side Panel (React) → WebSocket → FastAPI �
 
 4. **Sideload into Teams**
    ```powershell
+   # Windows (PowerShell)
    cd teams/appPackage
    Compress-Archive -Path manifest.json, color.png, outline.png -DestinationPath ..\realtimeqa-teams.zip -Force
+
+   # macOS / Linux
+   cd teams/appPackage
+   zip -r ../realtimeqa-teams.zip manifest.json color.png outline.png
    ```
    Teams → Apps → Upload a custom app → `realtimeqa-teams.zip`
 
@@ -276,15 +301,27 @@ Additionally, the Speech SDK token is now **auto-refreshed every 8 minutes** wit
 
 | Script | Description |
 |--------|-------------|
-| `start-dev.ps1` | Start backend (FastAPI:8000) + frontend (Vite:5173) in parallel |
-| `start-tunnel.ps1` | Start Dev Tunnel (for Teams testing, HTTPS exposure) |
+| `start-dev.ps1` | Start backend (FastAPI:8000) + frontend (Vite:5173) in parallel (Windows) |
+| `start-tunnel.ps1` | Start Dev Tunnel (for Teams testing, HTTPS exposure) (Windows) |
+| `start-dev.sh` | Start backend + frontend in parallel (macOS / Linux) |
+| `start-tunnel.sh` | Start Dev Tunnel (macOS / Linux) |
 
+**Windows (PowerShell):**
 ```powershell
 # Normal development
 .\start-dev.ps1
 
 # Teams testing (in a separate terminal)
 .\start-tunnel.ps1
+```
+
+**macOS / Linux:**
+```bash
+# Normal development
+./start-dev.sh
+
+# Teams testing (in a separate terminal)
+./start-tunnel.sh
 ```
 
 VS Code users can also launch via `Ctrl+Shift+B` (defined in `.vscode/tasks.json`).
