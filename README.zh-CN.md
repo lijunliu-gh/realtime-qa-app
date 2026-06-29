@@ -22,6 +22,7 @@
 | ② | **滚动摘要（Rolling Summary）** —— 自动对话摘要 | Azure Foundry (GPT) |
 | ③ | **带引用的问答（Q&A with Citations）** —— 提取问题并生成带引用来源的回答 | Foundry + Microsoft Learn MCP |
 | ④ | **Teams 侧边面板（Side Panel）** —— 在 Teams 会议中通过实时字幕运行问答 | Teams JS SDK + Live Captions |
+| ⑤ | **自动备份 & 导出** —— localStorage 备份 + 断连时自动下载 Markdown | Browser APIs |
 
 ## 架构
 
@@ -328,6 +329,7 @@ VS Code 用户也可通过 `Ctrl+Shift+B` 启动（定义在 `.vscode/tasks.json
 - [x] ~~Speech Token 自动刷新（修复约10分钟停止的问题）~~ → 已在 v3.2.0 中实现
 - [x] ~~会话持久化 + 重连恢复（应对长时间会议中的网络中断）~~ → 已在 v3.3.0 中实现
 - [x] ~~会议记录导出（Markdown/PDF）~~ → Markdown 导出已在 v1.1.0 中实现
+- [x] ~~自动备份 & 断连时自动导出（防止页面刷新/Teams iframe 重载时数据丢失）~~ → 已在 v3.5.2 中实现
 ## 许可证
 
 本项目使用 [Apache License 2.0](LICENSE) 许可证。

@@ -22,6 +22,7 @@
 | ② | **Rolling Summary** — Automatic conversation summarization | Azure Foundry (GPT) |
 | ③ | **Q&A with Citations** — Extracts questions and generates answers with citations | Foundry + Microsoft Learn MCP |
 | ④ | **Teams Side Panel** — Run QA from Teams meeting live captions | Teams JS SDK + Live Captions |
+| ⑤ | **Auto-Backup & Export** — localStorage backup + auto-download Markdown on disconnect | Browser APIs |
 
 ## Architecture
 
@@ -331,6 +332,7 @@ VS Code users can also launch via `Ctrl+Shift+B` (defined in `.vscode/tasks.json
 - [x] ~~Meeting notes export (Markdown/PDF)~~ → Markdown export implemented in v1.1.0
 - [x] ~~Incremental question extraction (avoid sending full transcript each time)~~ → Implemented in v1.2.0
 - [x] ~~Summary translation (translate meeting summary into a different language on demand)~~ → Implemented in v3.4.0
+- [x] ~~Auto-backup & auto-export on disconnect (prevent data loss on page refresh/Teams iframe reload)~~ → Implemented in v3.5.2
 
 ## License
 

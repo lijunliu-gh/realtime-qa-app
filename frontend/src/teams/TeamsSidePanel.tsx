@@ -5,14 +5,17 @@
  * is unavailable in this Teams client version, falls back to Azure Speech
  * SDK (same as standalone mode — uses microphone from the Side Panel).
  */
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useTeamsTranscript } from '../hooks/useTeamsTranscript';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { getMessages, type UILocale } from '../i18n';
+import { generateSessionMarkdown, downloadMarkdown } from '../exportMd';
 import type { TranscriptLine, Question } from '../App';
 import '../App.css';
+
+const BACKUP_KEY = 'realtimeqa_backup';
 
 const SPEECH_LANGUAGES = [
   { code: 'ja-JP', label: '日本語' },
@@ -44,6 +47,51 @@ export default function TeamsSidePanel() {
 
   const t = getMessages(uiLocale);
 
+  // --- Auto-backup: save state to localStorage on disconnect / unload ---
+  const transcriptRef = useRef(transcriptLines);
+  const summaryRef = useRef(summary);
+  const questionsRef = useRef(questions);
+  transcriptRef.current = transcriptLines;
+  summaryRef.current = summary;
+  questionsRef.current = questions;
+
+  const saveBackup = useCallback(() => {
+    // Only save if there's meaningful data
+    if (transcriptRef.current.length === 0 && !summaryRef.current) return;
+    const backup = {
+      timestamp: new Date().toISOString(),
+      transcript: transcriptRef.current,
+      summary: summaryRef.current,
+      questions: questionsRef.current,
+    };
+    try {
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+    } catch { /* storage full — best effort */ }
+  }, []);
+
+  // Save backup on page unload (Teams iframe reload, tab close)
+  useEffect(() => {
+    const handler = () => saveBackup();
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [saveBackup]);
+
+  // Restore backup on mount if current session has no data
+  useEffect(() => {
+    const raw = localStorage.getItem(BACKUP_KEY);
+    if (!raw) return;
+    try {
+      const backup = JSON.parse(raw);
+      // Only restore if we have no data yet (empty session)
+      if (transcriptLines.length === 0 && backup.transcript?.length > 0) {
+        setTranscriptLines(backup.transcript);
+        setSummary(backup.summary || '');
+        setQuestions(backup.questions || []);
+      }
+    } catch { /* corrupted backup — ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { sendMessage, isConnected } = useWebSocket({
     onTranscriptAppend: (line) =>
       setTranscriptLines((prev) => [...prev, line]),
@@ -74,6 +122,17 @@ export default function TeamsSidePanel() {
     },
     onConnected: (send) => {
       send({ type: 'set_language', language });
+    },
+    onDisconnected: () => {
+      saveBackup();
+      // Auto-download MD if there's meaningful data
+      const t = transcriptRef.current;
+      const s = summaryRef.current;
+      const q = questionsRef.current;
+      if (t.length > 0 || s) {
+        const md = generateSessionMarkdown(t, s, q);
+        downloadMarkdown(md);
+      }
     },
   });
 

@@ -1,9 +1,12 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useWebSocket, type Citation } from './hooks/useWebSocket';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { getMessages, type UILocale } from './i18n';
+import { generateSessionMarkdown, downloadMarkdown } from './exportMd';
 import './App.css';
+
+const BACKUP_KEY = 'realtimeqa_backup';
 
 export interface TranscriptLine {
   speaker: string;
@@ -49,6 +52,47 @@ function App() {
 
   const t = getMessages(uiLocale);
 
+  // --- Auto-backup: save state to localStorage on disconnect / unload ---
+  const transcriptRef = useRef(transcriptLines);
+  const summaryRef = useRef(summary);
+  const questionsRef = useRef(questions);
+  transcriptRef.current = transcriptLines;
+  summaryRef.current = summary;
+  questionsRef.current = questions;
+
+  const saveBackup = useCallback(() => {
+    if (transcriptRef.current.length === 0 && !summaryRef.current) return;
+    const backup = {
+      timestamp: new Date().toISOString(),
+      transcript: transcriptRef.current,
+      summary: summaryRef.current,
+      questions: questionsRef.current,
+    };
+    try {
+      localStorage.setItem(BACKUP_KEY, JSON.stringify(backup));
+    } catch { /* storage full — best effort */ }
+  }, []);
+
+  useEffect(() => {
+    const handler = () => saveBackup();
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [saveBackup]);
+
+  useEffect(() => {
+    const raw = localStorage.getItem(BACKUP_KEY);
+    if (!raw) return;
+    try {
+      const backup = JSON.parse(raw);
+      if (transcriptLines.length === 0 && backup.transcript?.length > 0) {
+        setTranscriptLines(backup.transcript);
+        setSummary(backup.summary || '');
+        setQuestions(backup.questions || []);
+      }
+    } catch { /* corrupted — ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const { sendMessage, isConnected, sessionId } = useWebSocket({
     onTranscriptAppend: (line) =>
       setTranscriptLines((prev) => [...prev, line]),
@@ -80,6 +124,17 @@ function App() {
     onConnected: (send) => {
       // Re-send language on every WS open (covers reconnects & backend restarts).
       send({ type: 'set_language', language });
+    },
+    onDisconnected: () => {
+      saveBackup();
+      // Auto-download MD if there's meaningful data
+      const t = transcriptRef.current;
+      const s = summaryRef.current;
+      const q = questionsRef.current;
+      if (t.length > 0 || s) {
+        const md = generateSessionMarkdown(t, s, q);
+        downloadMarkdown(md);
+      }
     },
   });
 

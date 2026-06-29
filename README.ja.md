@@ -24,6 +24,7 @@
 | ② | **Rolling Summary** — 会話を自動要約 | Azure Foundry (GPT) |
 | ③ | **Q&A with Citations** — 質問を抽出し引用付き回答を生成 | Foundry + Microsoft Learn MCP |
 | ④ | **Teams Side Panel** — Teams 会議のライブキャプションから QA を実行 | Teams JS SDK + Live Captions |
+| ⑤ | **自動バックアップ & エクスポート** — localStorage バックアップ + 切断時に Markdown を自動ダウンロード | Browser APIs |
 
 ## Architecture / アーキテクチャ
 
@@ -331,9 +332,9 @@ VS Code ユーザーは `Ctrl+Shift+B` でも起動できます（`.vscode/tasks
 - [x] ~~Speech トークン自動更新（約10分で停止する問題を修正）~~ → v3.2.0 で実装済み
 - [x] ~~セッション永続化 + 再接続復元（長時間会議中のネットワーク切断に対応）~~ → v3.3.0 で実装済み
 - [x] ~~議事録エクスポート（Markdown/PDF）~~ → Markdown エクスポートを v1.1.0 で実装済み
-- [ ] セッション永続化 + 再接続復元（長時間会議中のネットワーク切断に対応）
-- [x] ~~議事録エクスポート (Markdown/PDF)~~ → v1.1.0 で Markdown エクスポート実装済み
-- [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み- [x] ~~要約翻訳機能（会議要約を別の言語にオンデマンド翻訳）~~ → v3.4.0 で実装済み
+- [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み
+- [x] ~~要約翻訳機能（会議要約を別の言語にオンデマンド翻訳）~~ → v3.4.0 で実装済み
+- [x] ~~自動バックアップ & 切断時自動エクスポート（ページ更新/Teams iframe リロード時のデータ消失を防止）~~ → v3.5.2 で実装済み
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).

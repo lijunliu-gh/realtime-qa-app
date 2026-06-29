@@ -44,15 +44,32 @@ interface WebSocketHookOptions {
   onError?: (where: string, message: string) => void;
   /** Called on every successful WS open (including reconnects). */
   onConnected?: (send: (msg: Record<string, unknown>) => void) => void;
+  /** Called when WS disconnects (before reconnect attempt). Use for auto-backup. */
+  onDisconnected?: () => void;
 }
 
-const SESSION_STORAGE_KEY = 'realtimeqa_session_id';
+const SESSION_KEY = 'realtimeqa_session_id';
 
+/**
+ * Use localStorage so the session survives Teams iframe reloads.
+ * Fall back to sessionStorage for backwards compat.
+ */
 function getOrCreateSessionId(): string {
-  const stored = sessionStorage.getItem(SESSION_STORAGE_KEY);
-  if (stored) return stored;
+  const stored = localStorage.getItem(SESSION_KEY)
+    || sessionStorage.getItem(SESSION_KEY);
+  if (stored) {
+    localStorage.setItem(SESSION_KEY, stored);
+    return stored;
+  }
   const id = crypto.randomUUID();
-  sessionStorage.setItem(SESSION_STORAGE_KEY, id);
+  localStorage.setItem(SESSION_KEY, id);
+  return id;
+}
+
+/** Allow external reset (e.g. "New Session" button). */
+export function resetSessionId(): string {
+  const id = crypto.randomUUID();
+  localStorage.setItem(SESSION_KEY, id);
   return id;
 }
 
@@ -88,6 +105,7 @@ export function useWebSocket(options: WebSocketHookOptions) {
       ws.onclose = () => {
         if (mountedRef.current) {
           setIsConnected(false);
+          optionsRef.current.onDisconnected?.();
           scheduleReconnect();
         }
       };
