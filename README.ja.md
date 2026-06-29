@@ -335,6 +335,8 @@ VS Code ユーザーは `Ctrl+Shift+B` でも起動できます（`.vscode/tasks
 - [x] ~~質問の増分抽出（毎回全文を投げない）~~ → v1.2.0 で実装済み
 - [x] ~~要約翻訳機能（会議要約を別の言語にオンデマンド翻訳）~~ → v3.4.0 で実装済み
 - [x] ~~自動バックアップ & 切断時自動エクスポート（ページ更新/Teams iframe リロード時のデータ消失を防止）~~ → v3.5.2 で実装済み
+- [ ] スタンドアロンデスクトップアプリ（Tauri インストーラー）— 詳細は [docs/desktop-app-plan.md](docs/desktop-app-plan.md)
+
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).

@@ -330,6 +330,8 @@ VS Code 用户也可通过 `Ctrl+Shift+B` 启动（定义在 `.vscode/tasks.json
 - [x] ~~会话持久化 + 重连恢复（应对长时间会议中的网络中断）~~ → 已在 v3.3.0 中实现
 - [x] ~~会议记录导出（Markdown/PDF）~~ → Markdown 导出已在 v1.1.0 中实现
 - [x] ~~自动备份 & 断连时自动导出（防止页面刷新/Teams iframe 重载时数据丢失）~~ → 已在 v3.5.2 中实现
+- [ ] 独立桌面应用（Tauri 安装包）— 详见 [docs/desktop-app-plan.md](docs/desktop-app-plan.md)
+
 ## 许可证
 
 本项目使用 [Apache License 2.0](LICENSE) 许可证。

@@ -333,6 +333,7 @@ VS Code users can also launch via `Ctrl+Shift+B` (defined in `.vscode/tasks.json
 - [x] ~~Incremental question extraction (avoid sending full transcript each time)~~ → Implemented in v1.2.0
 - [x] ~~Summary translation (translate meeting summary into a different language on demand)~~ → Implemented in v3.4.0
 - [x] ~~Auto-backup & auto-export on disconnect (prevent data loss on page refresh/Teams iframe reload)~~ → Implemented in v3.5.2
+- [ ] Standalone desktop app (Tauri installer) — see [docs/desktop-app-plan.md](docs/desktop-app-plan.md)
 
 ## License
 
