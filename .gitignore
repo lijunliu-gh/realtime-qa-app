@@ -6,6 +6,7 @@ Thumbs.db
 
 # Root env (personal tunnel/app config)
 .env
+.dev-pids
 
 # Python backend
 backend/.venv/
