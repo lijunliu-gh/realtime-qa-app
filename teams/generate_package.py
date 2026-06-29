@@ -5,6 +5,48 @@ import json
 from PIL import Image, ImageDraw, ImageFont
 
 OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "appPackage")
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def load_env():
+    """Load .env from project root into os.environ (simple key=value parser)."""
+    env_path = os.path.join(ROOT_DIR, ".env")
+    if not os.path.exists(env_path):
+        return
+    with open(env_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, _, value = line.partition("=")
+                os.environ.setdefault(key.strip(), value.strip())
+
+
+def render_manifest():
+    """Read manifest.template.json, substitute {{DOMAIN}} and {{APP_ID}}, write manifest.json."""
+    template_path = os.path.join(OUT_DIR, "manifest.template.json")
+    output_path = os.path.join(OUT_DIR, "manifest.json")
+
+    domain = os.environ.get("TEAMS_DOMAIN", "")
+    app_id = os.environ.get("TEAMS_APP_ID", "")
+
+    if not domain or not app_id:
+        print("ERROR: Set TEAMS_DOMAIN and TEAMS_APP_ID in .env or environment.")
+        print("  cp .env.example .env  # then edit with your values")
+        raise SystemExit(1)
+
+    with open(template_path, encoding="utf-8") as f:
+        content = f.read()
+
+    content = content.replace("{{DOMAIN}}", domain)
+    content = content.replace("{{APP_ID}}", app_id)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(content)
+    print(f"  Generated {output_path}")
+    print(f"    DOMAIN = {domain}")
+    print(f"    APP_ID = {app_id}")
 
 def make_color_icon(path: str, size: int = 192):
     """192x192 color icon: purple rounded square with 'QA' text."""
@@ -81,6 +123,9 @@ def package_zip():
 
 
 if __name__ == "__main__":
+    load_env()
+    print("Rendering manifest from template...")
+    render_manifest()
     print("Generating icons...")
     make_color_icon(os.path.join(OUT_DIR, "color.png"))
     make_outline_icon(os.path.join(OUT_DIR, "outline.png"))

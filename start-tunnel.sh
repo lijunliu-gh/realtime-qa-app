@@ -5,8 +5,22 @@
 # Prerequisites:
 #   brew install --cask devtunnel
 #   devtunnel user login
+#   Create .env from .env.example with your TUNNEL_NAME
 
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Load TUNNEL_NAME from .env
+if [ -f "$SCRIPT_DIR/.env" ]; then
+  TUNNEL_NAME=$(grep -E '^\s*TUNNEL_NAME\s*=' "$SCRIPT_DIR/.env" | sed 's/^[^=]*=\s*//' | tr -d '[:space:]')
+fi
+
+if [ -z "$TUNNEL_NAME" ]; then
+  echo "ERROR: TUNNEL_NAME not found in .env"
+  echo "  cp .env.example .env  # then set TUNNEL_NAME"
+  exit 1
+fi
 
 if ! command -v devtunnel &>/dev/null; then
   echo "Error: devtunnel CLI not found."
@@ -14,9 +28,9 @@ if ! command -v devtunnel &>/dev/null; then
   exit 1
 fi
 
-echo "Starting dev tunnel on port 5173..."
+echo "Starting dev tunnel '$TUNNEL_NAME'..."
 
-devtunnel host --port-numbers 5173 --allow-anonymous &
+devtunnel host "$TUNNEL_NAME" --allow-anonymous &
 TUNNEL_PID=$!
 
 cleanup() {

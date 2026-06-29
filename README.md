@@ -184,6 +184,7 @@ frontend/
       SummaryPanel.tsx
       QAPanel.tsx             # Questions + answers + citation URLs
 
+.env.example                # Environment config template (tunnel name, domain, app ID)
 start-dev.ps1               # Start backend + frontend in parallel (Windows)
 start-dev.sh                # Start backend + frontend in parallel (macOS / Linux)
 start-tunnel.ps1            # Start Dev Tunnel (for Teams testing) (Windows)
@@ -256,25 +257,18 @@ Teams Meeting (live captions) → Side Panel (React) → WebSocket → FastAPI �
    ./start-tunnel.sh
    ```
 
-3. **Create manifest.json**
-   ```powershell
-   cd teams/appPackage
-   copy manifest.template.json manifest.json
+3. **Configure `.env` and generate manifest**
+   ```bash
+   cp .env.example .env
+   # Edit .env: set TUNNEL_NAME, TEAMS_DOMAIN, TEAMS_APP_ID
+   python teams/generate_package.py
    ```
-   Open `manifest.json` and replace the following:
-   - `{{APP_ID}}` → Your Entra App Registration ID
-   - `{{DOMAIN}}` → Your dev tunnel domain (e.g., `xxxxxx-5173.jpe1.devtunnels.ms`)
+   This reads `.env`, substitutes `{{APP_ID}}` and `{{DOMAIN}}` in the template, generates icons, and packages the zip.
 
 4. **Sideload into Teams**
-   ```powershell
-   # Windows (PowerShell)
-   cd teams/appPackage
-   Compress-Archive -Path manifest.json, color.png, outline.png -DestinationPath ..\realtimeqa-teams.zip -Force
 
-   # macOS / Linux
-   cd teams/appPackage
-   zip -r ../realtimeqa-teams.zip manifest.json color.png outline.png
-   ```
+   The previous step generates `teams/realtimeqa-teams.zip` automatically.
+
    Teams → Apps → Upload a custom app → `realtimeqa-teams.zip`
 
 5. **Use in a meeting**
