@@ -168,6 +168,23 @@ export default function TeamsSidePanel() {
     sendMessage({ type: 'request_questions' });
   };
 
+  const handleExport = () => {
+    const md = generateSessionMarkdown(transcriptLines, summary, questions);
+    downloadMarkdown(md);
+  };
+
+  const handleClear = () => {
+    if (!window.confirm(t.confirmClear)) return;
+    setTranscriptLines([]);
+    setSummary('');
+    setQuestions([]);
+    setTranslatedSummary('');
+    setTranslateTarget('');
+    setTokenCount(0);
+    try { localStorage.removeItem(BACKUP_KEY); } catch { /* ignore */ }
+    sendMessage({ type: 'reset' });
+  };
+
   const handleTranslate = () => {
     if (!translateTarget || !summary) return;
     setIsTranslating(true);
@@ -196,6 +213,8 @@ export default function TeamsSidePanel() {
           <button className="btn-neo" onClick={handleRequestQuestions}>
             🔍 {t.extractQuestions}
           </button>
+          <button className="btn-neo" onClick={handleExport}>📄 {t.export}</button>
+          <button className="btn-neo" onClick={handleClear} disabled={isRunning}>🗑 {t.clear}</button>
         </div>
         <div className="top-bar-right">
           <select
