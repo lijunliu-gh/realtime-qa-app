@@ -24,6 +24,8 @@ export interface Messages {
   pending: string;
   citations: string;
   translateTo: string;
+  clear: string;
+  confirmClear: string;
 }
 
 const zh: Messages = {
@@ -50,6 +52,8 @@ const zh: Messages = {
   pending: '生成中…',
   citations: '引用来源',
   translateTo: '翻译为',
+  clear: '清空',
+  confirmClear: '确定清空摘要、问答和原始记录吗？此操作无法撤销。',
 };
 
 const ja: Messages = {
@@ -76,6 +80,8 @@ const ja: Messages = {
   pending: '生成中…',
   citations: '引用元',
   translateTo: '翻訳先',
+  clear: 'クリア',
+  confirmClear: 'サマリー・Q&A・文字起こしを消去しますか？元に戻せません。',
 };
 
 const en: Messages = {
@@ -102,6 +108,8 @@ const en: Messages = {
   pending: 'Generating…',
   citations: 'Sources',
   translateTo: 'Translate to',
+  clear: 'Clear',
+  confirmClear: 'Clear summary, Q&A, and transcript? This cannot be undone.',
 };
 
 const locales: Record<UILocale, Messages> = {

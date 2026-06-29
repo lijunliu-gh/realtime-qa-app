@@ -88,6 +88,19 @@ class SessionState:
 sessions: dict[str, SessionState] = {}
 
 
+def _reset_session(session: SessionState) -> None:
+    """Clear all accumulated content while keeping the session/connection alive."""
+    _cancel_pending(session)
+    session.transcript_lines.clear()
+    session.summary = ""
+    session.questions = []
+    session.answers = {}
+    session.token_count = 0
+    session.summary_cursor = 0
+    session.questions_cursor = 0
+    session.in_flight_answers.clear()
+
+
 async def _safe_send(websocket: WebSocket, payload: dict) -> None:
     try:
         await websocket.send_text(json.dumps(payload))
@@ -190,6 +203,18 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                     asyncio.create_task(
                         _translate_summary(websocket, session, target)
                     )
+
+                elif msg_type == "reset":
+                    _reset_session(session)
+                    await _safe_send(websocket, {
+                        "type": "transcript_snapshot", "lines": []})
+                    await _safe_send(websocket, {
+                        "type": "summary_update", "summary": ""})
+                    await _safe_send(websocket, {
+                        "type": "questions_update", "questions": []})
+                    await _safe_send(websocket, {
+                        "type": "token_count", "count": 0})
+                    logger.info("Session reset (transcript/summary/Q&A cleared)")
 
                 else:
                     await _send_error(

@@ -158,6 +158,17 @@ function App() {
   const handleStop = () => { setIsRunning(false); stop(); };
   const handleRequestQuestions = () => { sendMessage({ type: 'request_questions' }); };
   const handleExport = () => { window.open(`/export/${sessionId}`, '_blank'); };
+  const handleClear = () => {
+    if (!window.confirm(t.confirmClear)) return;
+    setTranscriptLines([]);
+    setSummary('');
+    setQuestions([]);
+    setTranslatedSummary('');
+    setTranslateTarget('');
+    setTokenCount(0);
+    try { localStorage.removeItem(BACKUP_KEY); } catch { /* ignore */ }
+    sendMessage({ type: 'reset' });
+  };
   const handleTranslate = () => {
     if (!translateTarget || !summary) return;
     setIsTranslating(true);
@@ -188,6 +199,7 @@ function App() {
           )}
           <button className="btn-neo" onClick={handleRequestQuestions}>🔍 {t.extractQuestions}</button>
           <button className="btn-neo" onClick={handleExport}>📄 {t.export}</button>
+          <button className="btn-neo" onClick={handleClear} disabled={isRunning}>🗑 {t.clear}</button>
         </div>
 
         <div className="top-bar-right">
