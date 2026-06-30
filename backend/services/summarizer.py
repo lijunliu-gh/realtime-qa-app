@@ -27,6 +27,8 @@ from azure.identity import (
 )
 from openai import AsyncAzureOpenAI
 
+from .auth import API_KEY, resolve_auth_mode
+
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +96,10 @@ class SummarizerService:
             "max_retries": 2,
         }
 
-        if api_key:
+        mode = resolve_auth_mode(
+            os.getenv("AZURE_OPENAI_AUTH_MODE"), bool(api_key)
+        )
+        if mode == API_KEY and api_key:
             kwargs["api_key"] = api_key
             logger.info("Foundry client using API key auth")
         else:

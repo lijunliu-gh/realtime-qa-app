@@ -11,6 +11,7 @@ from fastapi.responses import Response, JSONResponse
 
 from services.summarizer import SummarizerService
 from services.mcp_client import SearchAggregator, build_providers_from_env
+from services.auth import API_KEY, resolve_auth_mode
 
 load_dotenv()
 
@@ -512,14 +513,54 @@ async def health():
     return {"status": "ok", "sessions": len(sessions)}
 
 
+async def _issue_speech_token_from_key(region: str, key: str) -> str:
+    """Exchange a Speech resource key for a short-lived STS access token.
+
+    Issued from the *regional* endpoint so the token is scoped to the
+    regional Speech endpoints that the browser SDK's
+    ``fromAuthorizationToken(token, region)`` connects to. (STS tokens are
+    scoped to the host that issued them.)
+    """
+    import aiohttp
+
+    url = f"https://{region}.api.cognitive.microsoft.com/sts/v1.0/issueToken"
+    headers = {"Ocp-Apim-Subscription-Key": key, "Content-Length": "0"}
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers) as resp:
+            resp.raise_for_status()
+            return await resp.text()
+
+
 @app.get("/api/speech-token")
 async def speech_token():
-    """Issue a short-lived Entra ID token for Azure Speech SDK (browser)."""
+    """Issue a short-lived token for the Azure Speech SDK (browser).
+
+    Supports two auth modes so distributed users can bring either their own
+    Speech resource key or their own Entra ID account:
+      - api_key: exchange ``AZURE_SPEECH_KEY`` for an STS token (regional)
+      - entra:   build an ``aad#<resource-id>#<token>`` via Entra ID
+    Either way the response shape stays ``{token, region}``.
+    """
     region = os.getenv("AZURE_SPEECH_REGION", "eastus2")
+    speech_key = os.getenv("AZURE_SPEECH_KEY", "").strip()
+    mode = resolve_auth_mode(os.getenv("AZURE_SPEECH_AUTH_MODE"), bool(speech_key))
+
+    if mode == API_KEY and speech_key:
+        try:
+            token = await _issue_speech_token_from_key(region, speech_key)
+            return JSONResponse({"token": token, "region": region})
+        except Exception as exc:
+            logger.exception("Failed to issue speech token from key")
+            return JSONResponse({"error": str(exc)}, status_code=500)
+
+    # Entra ID path (default / fallback).
     resource_id = os.getenv("AZURE_SPEECH_RESOURCE_ID", "")
     if not resource_id:
         return JSONResponse(
-            {"error": "AZURE_SPEECH_RESOURCE_ID not configured in backend/.env"},
+            {
+                "error": "AZURE_SPEECH_RESOURCE_ID not configured (Entra mode); "
+                "or set AZURE_SPEECH_KEY to use API-key mode."
+            },
             status_code=500,
         )
     try:

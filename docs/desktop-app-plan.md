@@ -39,8 +39,8 @@ auth path can be added independently without reworking the other.
 ## TODO
 
 ### Phase 0: Auth foundation (do first — shared by both paths)
-- [ ] 0.1 Introduce explicit `auth_mode` (`api_key` | `entra`); unify Foundry + Speech auth resolution (replace implicit "is key set?" logic)
-- [ ] 0.2 Add **API-key path** to `/api/speech-token` (key + region → `issueToken` REST → short-lived token; keep Entra path as fallback)
+- [x] 0.1 Introduce explicit `auth_mode` (`api_key` | `entra`); unify Foundry + Speech auth resolution (replace implicit "is key set?" logic) — `services/auth.py`
+- [x] 0.2 Add **API-key path** to `/api/speech-token` (key + region → regional `issueToken` REST → short-lived token; keep Entra path as fallback)
 - [ ] 0.3 Verify on a clean machine (no Azure CLI) that **both** key and Entra modes run summary/QA/speech end-to-end
 
 ### Phase 1: Config contract (depended on by everything above — lock early)
