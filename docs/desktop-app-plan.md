@@ -28,7 +28,7 @@ Current code status:
 | Service | API key | Entra ID | Gap |
 |---------|---------|----------|-----|
 | Foundry (`summarizer.py`) | ✅ | ✅ | none — already dual-mode |
-| Speech (`/api/speech-token`) | ❌ | ✅ | **add API-key path** (issue token via `issueToken` REST) |
+| Speech (`/api/speech-token`) | ✅ | ✅ | none — API-key path added in v3.8.0 (regional `issueToken`) |
 
 Design principle to minimize rework: establish an explicit `auth_mode`
 (`api_key` \| `entra`) abstraction first, shared by Foundry and Speech, so each
@@ -99,6 +99,6 @@ auth path can be added independently without reworking the other.
 - Users must each have their own Azure resources; first-run wizard must state this clearly
 - Installer ships no secrets
 - CSP allowlist needed for Azure endpoints
-- **Min viable = Phases 0-3** (dual-auth + config + standalone exe). Phase 0.2 (Speech key path) is the hard prerequisite — start there.
+- **Min viable = Phases 0-3** (dual-auth + config + standalone exe). Phase 0.1/0.2 done in v3.8.0; next is the config contract (Phase 1).
 ```
 

@@ -97,9 +97,14 @@ AZURE_OPENAI_API_VERSION=2024-10-21
 MCP_LEARN_URL=https://learn.microsoft.com/api/mcp
 # MCP_SERVERS=GitHub Docs|https://example.com/mcp, https://internal-wiki/mcp
 ALLOWED_ORIGINS=http://localhost:5173
-# Azure Speech (AI Services resource)
+# Azure Speech — use EITHER a key (api-key mode) OR a resource ID (Entra mode)
 AZURE_SPEECH_REGION=eastus2
+# API-key mode: set the resource key (exchanged server-side for a short-lived token; never sent to the browser)
+AZURE_SPEECH_KEY=
+# Entra mode: set the ARM resource ID instead
 AZURE_SPEECH_RESOURCE_ID=/subscriptions/<sub-id>/resourceGroups/<rg>/providers/Microsoft.CognitiveServices/accounts/<name>
+# Optional: force auth mode (api_key | entra). Default: auto-detect (key present = api_key, else entra).
+# AUTH_MODE=
 # Specify if the Foundry resource is in a specific tenant (for InteractiveBrowserCredential)
 # AZURE_TENANT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
@@ -292,6 +297,15 @@ Summary, question extraction, and Q&A answers are now generated in the **same la
 Supported output languages: Japanese, English, Chinese, Korean, French, German (extensible).
 
 Additionally, the Speech SDK token is now **auto-refreshed every 8 minutes** with automatic error recovery, fixing the issue where transcription stopped after ~10 minutes.
+
+## Dual Authentication (v3.8)
+
+Every service supports **both Entra ID and API key**, chosen independently so each user can bring whatever they have:
+
+- **Foundry** (summary/QA): set `AZURE_OPENAI_API_KEY` for key mode, or leave it empty to use Entra ID.
+- **Speech** (transcription): set `AZURE_SPEECH_KEY` for key mode (the backend exchanges it for a short-lived token via the regional `issueToken` endpoint — the key never reaches the browser), or set `AZURE_SPEECH_RESOURCE_ID` to use Entra ID.
+
+Mode is **auto-detected** per service (key present → api-key, otherwise Entra), or forced globally with `AUTH_MODE=api_key|entra` (per-service overrides: `AZURE_OPENAI_AUTH_MODE`, `AZURE_SPEECH_AUTH_MODE`). Existing key-less setups keep working unchanged.
 
 ## Dev Scripts (v3.1)
 
