@@ -10,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, JSONResponse
 
 from services.summarizer import SummarizerService
-from services.mcp_client import LearnMcpClient
+from services.mcp_client import SearchAggregator, build_providers_from_env
 
 load_dotenv()
 
@@ -24,7 +24,7 @@ TRANSCRIPT_HISTORY_LIMIT = int(os.getenv("TRANSCRIPT_HISTORY_LIMIT", "500"))
 MCP_SEARCH_LIMIT = int(os.getenv("MCP_SEARCH_LIMIT", "5"))
 
 
-mcp_client = LearnMcpClient()
+mcp_client = SearchAggregator(build_providers_from_env())
 
 
 @asynccontextmanager
@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
         await mcp_client.start()
     except Exception:
         logger.exception(
-            "Failed to start MS Learn MCP client; QA answers will be "
+            "Failed to start MCP search providers; QA answers will be "
             "generated without doc grounding."
         )
     try:

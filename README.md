@@ -20,7 +20,7 @@
 |---|---------|------|
 | ① | **Live Transcription** — Real-time speech-to-text (multilingual / speaker identification) | Azure Speech SDK |
 | ② | **Rolling Summary** — Automatic conversation summarization | Azure Foundry (GPT) |
-| ③ | **Q&A with Citations** — Extracts questions and generates answers with citations | Foundry + Microsoft Learn MCP |
+| ③ | **Q&A with Citations** — Extracts questions and generates answers with citations (multi-source) | Foundry + MCP (Learn + pluggable) |
 | ④ | **Teams Side Panel** — Run QA from Teams meeting live captions | Teams JS SDK + Live Captions |
 | ⑤ | **Auto-Backup & Export** — localStorage backup + auto-download Markdown on disconnect | Browser APIs |
 
@@ -95,6 +95,7 @@ AZURE_OPENAI_API_KEY=
 # Optional
 AZURE_OPENAI_API_VERSION=2024-10-21
 MCP_LEARN_URL=https://learn.microsoft.com/api/mcp
+# MCP_SERVERS=GitHub Docs|https://example.com/mcp, https://internal-wiki/mcp
 ALLOWED_ORIGINS=http://localhost:5173
 # Azure Speech (AI Services resource)
 AZURE_SPEECH_REGION=eastus2
@@ -166,7 +167,7 @@ backend/
   main.py                     # FastAPI app, WebSocket, debounce/answer pipeline
   services/
     summarizer.py             # Foundry (Entra ID) — summary / questions / answer-with-context
-    mcp_client.py             # Microsoft Learn MCP client (streamable HTTP)
+    mcp_client.py             # MCP search providers + aggregator (multi-source, streamable HTTP)
   smoke_test.py               # Foundry + MCP connectivity check
   smoke_mcp.py                # MCP-only test (no Azure required)
 
@@ -334,6 +335,7 @@ VS Code users can also launch via `Ctrl+Shift+B` (defined in `.vscode/tasks.json
 - [x] ~~Summary translation (translate meeting summary into a different language on demand)~~ → Implemented in v3.4.0
 - [x] ~~Auto-backup & auto-export on disconnect (prevent data loss on page refresh/Teams iframe reload)~~ → Implemented in v3.5.2
 - [x] ~~Manual clear (one-click wipe of transcript/summary/Q&A on both client and server)~~ → Implemented in v3.6.0
+- [x] ~~Multi-source doc grounding (parallel fan-out search across multiple MCP servers, round-robin merge)~~ → Implemented in v3.7.0
 - [ ] Standalone desktop app (Tauri installer) — see [docs/desktop-app-plan.md](docs/desktop-app-plan.md)
 
 ## License

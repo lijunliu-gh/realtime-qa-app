@@ -20,7 +20,7 @@
 |---|------|------|
 | ① | **实时转录（Live Transcription）** —— 实时语音转文字（多语言 / 说话人识别） | Azure Speech SDK |
 | ② | **滚动摘要（Rolling Summary）** —— 自动对话摘要 | Azure Foundry (GPT) |
-| ③ | **带引用的问答（Q&A with Citations）** —— 提取问题并生成带引用来源的回答 | Foundry + Microsoft Learn MCP |
+| ③ | **带引用的问答（Q&A with Citations）** —— 提取问题并从多来源文档生成带引用的回答 | Foundry + MCP（多来源） |
 | ④ | **Teams 侧边面板（Side Panel）** —— 在 Teams 会议中通过实时字幕运行问答 | Teams JS SDK + Live Captions |
 | ⑤ | **自动备份 & 导出** —— localStorage 备份 + 断连时自动下载 Markdown | Browser APIs |
 
@@ -95,6 +95,7 @@ AZURE_OPENAI_API_KEY=
 # Optional
 AZURE_OPENAI_API_VERSION=2024-10-21
 MCP_LEARN_URL=https://learn.microsoft.com/api/mcp
+# MCP_SERVERS=GitHub Docs|https://example.com/mcp, https://internal-wiki/mcp
 ALLOWED_ORIGINS=http://localhost:5173
 # Azure Speech (AI Services resource)
 AZURE_SPEECH_REGION=eastus2
@@ -166,7 +167,7 @@ backend/
   main.py                     # FastAPI 应用、WebSocket、防抖/回答流水线
   services/
     summarizer.py             # Foundry (Entra ID) — 摘要 / 问题提取 / 带上下文回答
-    mcp_client.py             # Microsoft Learn MCP 客户端（Streamable HTTP）
+    mcp_client.py             # MCP 搜索提供程序 + 聚合器（多来源、Streamable HTTP）
   smoke_test.py               # Foundry + MCP 连接检查
   smoke_mcp.py                # 仅 MCP 测试（无需 Azure）
 
@@ -331,6 +332,7 @@ VS Code 用户也可通过 `Ctrl+Shift+B` 启动（定义在 `.vscode/tasks.json
 - [x] ~~会议记录导出（Markdown/PDF）~~ → Markdown 导出已在 v1.1.0 中实现
 - [x] ~~自动备份 & 断连时自动导出（防止页面刷新/Teams iframe 重载时数据丢失）~~ → 已在 v3.5.2 中实现
 - [x] ~~手动清空（一键清空转录/摘要/问答，同步清除前端与后端会话）~~ → 已在 v3.6.0 中实现
+- [x] ~~多来源文档检索（并行扇出搜索多个 MCP 服务器 + 轮询合并去重）~~ → 已在 v3.7.0 中实现
 - [ ] 独立桌面应用（Tauri 安装包）— 详见 [docs/desktop-app-plan.md](docs/desktop-app-plan.md)
 
 ## 许可证

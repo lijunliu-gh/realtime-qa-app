@@ -1,16 +1,17 @@
-"""Thin async wrapper around the Microsoft Learn MCP server.
+"""Async wrappers around streamable-HTTP MCP servers used for Q&A grounding.
 
-The MS Learn MCP endpoint (`https://learn.microsoft.com/api/mcp`) exposes
-streamable-HTTP MCP and requires no auth. We keep a single long-lived
-client session for the lifetime of the FastAPI app and expose a tiny
-`search()` helper used by the answer pipeline.
+The Microsoft Learn MCP endpoint (`https://learn.microsoft.com/api/mcp`)
+exposes streamable-HTTP MCP and requires no auth. Each `McpSearchProvider`
+keeps a single long-lived client session for the lifetime of the FastAPI
+app and exposes a tiny `search()` helper.
 
-The MCP server contributes (at minimum) these tools:
-  * `microsoft_docs_search` — keyword search over Microsoft Learn docs;
-    returns a list of snippets with title / url / content.
-  * `microsoft_docs_fetch`  — fetch the full content of a doc by URL.
+`SearchAggregator` fans a query out across several providers (e.g.
+Microsoft Learn plus any servers listed in ``MCP_SERVERS``) and merges the
+results, so answers can be grounded in multiple documentation sources.
 
-We only need the search tool for the MVP.
+An MCP server contributes (at minimum) a search-like tool such as
+`microsoft_docs_search` — keyword search returning snippets with
+title / url / content. We only need the search tool here.
 """
 
 from __future__ import annotations
@@ -35,21 +36,31 @@ class DocSnippet:
     title: str
     url: str
     content: str
+    source: str = ""
 
     def to_dict(self) -> dict[str, str]:
-        return {"title": self.title, "url": self.url, "content": self.content}
+        return {
+            "title": self.title,
+            "url": self.url,
+            "content": self.content,
+            "source": self.source,
+        }
 
 
-class LearnMcpClient:
-    """Long-lived MCP client connected to Microsoft Learn.
+class McpSearchProvider:
+    """Long-lived MCP client for a single streamable-HTTP MCP server.
+
+    Each provider connects to one MCP endpoint, picks a search-like tool,
+    and exposes a tiny `search()` helper returning `DocSnippet`s tagged
+    with this provider's `name` (used as the citation source).
 
     Usage::
 
-        client = LearnMcpClient()
-        await client.start()
-        snippets = await client.search("Azure OpenAI Foundry")
+        provider = McpSearchProvider("Microsoft Learn", "https://.../mcp")
+        await provider.start()
+        snippets = await provider.search("Azure OpenAI Foundry")
         ...
-        await client.aclose()
+        await provider.aclose()
     """
 
     SEARCH_TOOL_CANDIDATES = (
@@ -58,10 +69,9 @@ class LearnMcpClient:
         "search",
     )
 
-    def __init__(self, url: str | None = None) -> None:
-        self.url = url or os.getenv(
-            "MCP_LEARN_URL", "https://learn.microsoft.com/api/mcp"
-        )
+    def __init__(self, name: str, url: str) -> None:
+        self.name = name
+        self.url = url
         self._stack: AsyncExitStack | None = None
         self._session: ClientSession | None = None
         self._search_tool: str | None = None
@@ -81,7 +91,10 @@ class LearnMcpClient:
             await session.initialize()
             tools = await session.list_tools()
             tool_names = [t.name for t in tools.tools]
-            logger.info("MCP connected to %s, tools=%s", self.url, tool_names)
+            logger.info(
+                "MCP[%s] connected to %s, tools=%s",
+                self.name, self.url, tool_names,
+            )
 
             for candidate in self.SEARCH_TOOL_CANDIDATES:
                 if candidate in tool_names:
@@ -96,8 +109,8 @@ class LearnMcpClient:
 
             if not self._search_tool:
                 logger.warning(
-                    "MCP server has no search-like tool; available: %s",
-                    tool_names,
+                    "MCP[%s] has no search-like tool; available: %s",
+                    self.name, tool_names,
                 )
 
             self._session = session
@@ -114,7 +127,7 @@ class LearnMcpClient:
             try:
                 await stack.aclose()
             except Exception:
-                logger.exception("Error closing MCP client")
+                logger.exception("Error closing MCP[%s] client", self.name)
 
     async def search(self, query: str, limit: int = 5) -> list[DocSnippet]:
         if not self._session or not self._search_tool:
@@ -135,11 +148,139 @@ class LearnMcpClient:
                         self._search_tool, {"question": query}
                     )
                 except Exception:
-                    logger.exception("MCP search failed for %r", query)
+                    logger.exception(
+                        "MCP[%s] search failed for %r", self.name, query
+                    )
                     return []
 
         snippets = _parse_search_result(result)
+        for snippet in snippets:
+            snippet.source = self.name
         return snippets[:limit]
+
+
+class LearnMcpClient(McpSearchProvider):
+    """Backward-compatible provider for the Microsoft Learn MCP server."""
+
+    def __init__(self, url: str | None = None) -> None:
+        super().__init__(
+            "Microsoft Learn",
+            url or os.getenv(
+                "MCP_LEARN_URL", "https://learn.microsoft.com/api/mcp"
+            ),
+        )
+
+
+class SearchAggregator:
+    """Fan-out search across multiple MCP providers and merge results.
+
+    Providers are queried in parallel; results are de-duplicated by URL
+    and interleaved round-robin so every source is represented and no
+    single source dominates the cited references. A provider that fails
+    to start (or to answer a query) is skipped rather than failing the
+    whole search.
+    """
+
+    def __init__(self, providers: list[McpSearchProvider]) -> None:
+        self._providers = list(providers)
+
+    @property
+    def providers(self) -> list[McpSearchProvider]:
+        return self._providers
+
+    async def start(self) -> None:
+        if not self._providers:
+            logger.warning("SearchAggregator has no providers configured.")
+            return
+        results = await asyncio.gather(
+            *(p.start() for p in self._providers),
+            return_exceptions=True,
+        )
+        alive: list[McpSearchProvider] = []
+        for provider, res in zip(self._providers, results):
+            if isinstance(res, BaseException):
+                logger.warning(
+                    "Provider %s failed to start and will be skipped: %s",
+                    provider.name, res,
+                )
+            else:
+                alive.append(provider)
+        self._providers = alive
+        logger.info(
+            "SearchAggregator ready with %d provider(s): %s",
+            len(alive), [p.name for p in alive],
+        )
+
+    async def aclose(self) -> None:
+        await asyncio.gather(
+            *(p.aclose() for p in self._providers),
+            return_exceptions=True,
+        )
+
+    async def search(self, query: str, limit: int = 5) -> list[DocSnippet]:
+        if not self._providers:
+            return []
+        results = await asyncio.gather(
+            *(p.search(query, limit) for p in self._providers),
+            return_exceptions=True,
+        )
+        per_source: list[list[DocSnippet]] = []
+        for provider, res in zip(self._providers, results):
+            if isinstance(res, BaseException):
+                logger.warning(
+                    "Provider %s search failed: %s", provider.name, res
+                )
+            elif res:
+                per_source.append(res)
+        return _merge_round_robin(per_source, limit)
+
+
+def build_providers_from_env() -> list[McpSearchProvider]:
+    """Build the provider list from environment configuration.
+
+    Always includes Microsoft Learn (``MCP_LEARN_URL``). Additional MCP
+    servers come from ``MCP_SERVERS``: a comma-separated list of entries,
+    each either ``url`` or ``Friendly Name|url``. Example::
+
+        MCP_SERVERS=GitHub Docs|https://example.com/mcp, https://other/mcp
+    """
+    providers: list[McpSearchProvider] = [LearnMcpClient()]
+    raw = os.getenv("MCP_SERVERS", "").strip()
+    for entry in (e.strip() for e in raw.split(",")):
+        if not entry:
+            continue
+        if "|" in entry:
+            name, url = entry.split("|", 1)
+            name, url = name.strip(), url.strip()
+        else:
+            url = entry
+            name = url
+        if url:
+            providers.append(McpSearchProvider(name, url))
+    return providers
+
+
+def _merge_round_robin(
+    lists: list[list[DocSnippet]], limit: int
+) -> list[DocSnippet]:
+    """Interleave per-source result lists, de-duplicating by URL."""
+    out: list[DocSnippet] = []
+    seen: set[str] = set()
+    idx = 0
+    while len(out) < limit and any(idx < len(lst) for lst in lists):
+        for lst in lists:
+            if idx >= len(lst):
+                continue
+            snippet = lst[idx]
+            key = snippet.url.strip() or f"{snippet.title}|{snippet.content[:60]}"
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(snippet)
+            if len(out) >= limit:
+                break
+        idx += 1
+    return out
 
 
 def _parse_search_result(result: Any) -> list[DocSnippet]:

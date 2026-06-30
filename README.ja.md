@@ -22,7 +22,7 @@
 |---|---------|------|
 | ① | **Live Transcription** — 音声をリアルタイムで文字起こし（多言語 / 話者識別対応） | Azure Speech SDK |
 | ② | **Rolling Summary** — 会話を自動要約 | Azure Foundry (GPT) |
-| ③ | **Q&A with Citations** — 質問を抽出し引用付き回答を生成 | Foundry + Microsoft Learn MCP |
+| ③ | **Q&A with Citations** — 質問を抽出し引用付き回答を生成（マルチソース） | Foundry + MCP (Learn + 拡張可) |
 | ④ | **Teams Side Panel** — Teams 会議のライブキャプションから QA を実行 | Teams JS SDK + Live Captions |
 | ⑤ | **自動バックアップ & エクスポート** — localStorage バックアップ + 切断時に Markdown を自動ダウンロード | Browser APIs |
 
@@ -97,6 +97,7 @@ AZURE_OPENAI_API_KEY=
 # 任意
 AZURE_OPENAI_API_VERSION=2024-10-21
 MCP_LEARN_URL=https://learn.microsoft.com/api/mcp
+# MCP_SERVERS=GitHub Docs|https://example.com/mcp, https://internal-wiki/mcp
 ALLOWED_ORIGINS=http://localhost:5173
 # Azure Speech (AIServices リソース)
 AZURE_SPEECH_REGION=eastus2
@@ -168,7 +169,7 @@ backend/
   main.py                     # FastAPI app, WebSocket, debounce/answer pipeline
   services/
     summarizer.py             # Foundry (Entra ID) — summary / questions / answer-with-context
-    mcp_client.py             # Microsoft Learn MCP client (streamable HTTP)
+    mcp_client.py             # MCP 検索プロバイダー + アグリゲーター（マルチソース、streamable HTTP）
   smoke_test.py               # Foundry + MCP の疎通確認
   smoke_mcp.py                # MCP 単独テスト (Azure 不要)
 
@@ -336,6 +337,7 @@ VS Code ユーザーは `Ctrl+Shift+B` でも起動できます（`.vscode/tasks
 - [x] ~~要約翻訳機能（会議要約を別の言語にオンデマンド翻訳）~~ → v3.4.0 で実装済み
 - [x] ~~自動バックアップ & 切断時自動エクスポート（ページ更新/Teams iframe リロード時のデータ消失を防止）~~ → v3.5.2 で実装済み
 - [x] ~~手動クリア（文字起こし/要約/Q&A をクライアント・サーバー両方でワンクリック消去）~~ → v3.6.0 で実装済み
+- [x] ~~マルチソース文書検索（複数 MCP サーバーへの並列ファンアウト検索 + ラウンドロビン統合）~~ → v3.7.0 で実装済み
 - [ ] スタンドアロンデスクトップアプリ（Tauri インストーラー）— 詳細は [docs/desktop-app-plan.md](docs/desktop-app-plan.md)
 
 ## License
