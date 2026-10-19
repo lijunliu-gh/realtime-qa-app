@@ -1,5 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import {
+  Play, Square, Search, FileDown, Trash2, Mic, Globe,
+  RefreshCw, Loader2, Sun, Moon, FileText, MessagesSquare, ChevronUp, ChevronDown,
+} from 'lucide-react';
 import { useWebSocket, type Citation } from './hooks/useWebSocket';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { getMessages, type UILocale } from './i18n';
@@ -45,7 +49,7 @@ function App() {
   const [language, setLanguage] = useState('ja-JP');
   const [uiLocale, setUiLocale] = useState<UILocale>('ja-JP');
   const [showTranscript, setShowTranscript] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
   const [translatedSummary, setTranslatedSummary] = useState('');
   const [translateTarget, setTranslateTarget] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
@@ -178,7 +182,8 @@ function App() {
   const toggleTheme = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
-    document.documentElement.setAttribute('data-theme', next === 'dark' ? '' : 'light');
+    if (next === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.removeAttribute('data-theme');
   };
 
   return (
@@ -193,17 +198,17 @@ function App() {
 
         <div className="top-bar-center">
           {!isRunning ? (
-            <button className="btn-neo active" onClick={handleStart}>▶ {t.start}</button>
+            <button className="btn-neo active" onClick={handleStart}><Play /> {t.start}</button>
           ) : (
-            <button className="btn-neo danger" onClick={handleStop}>■ {t.stop}</button>
+            <button className="btn-neo danger" onClick={handleStop}><Square /> {t.stop}</button>
           )}
-          <button className="btn-neo" onClick={handleRequestQuestions}>🔍 {t.extractQuestions}</button>
-          <button className="btn-neo" onClick={handleExport}>📄 {t.export}</button>
-          <button className="btn-neo" onClick={handleClear} disabled={isRunning}>🗑 {t.clear}</button>
+          <button className="btn-neo" onClick={handleRequestQuestions}><Search /> {t.extractQuestions}</button>
+          <button className="btn-neo" onClick={handleExport}><FileDown /> {t.export}</button>
+          <button className="btn-neo" onClick={handleClear} disabled={isRunning}><Trash2 /> {t.clear}</button>
         </div>
 
         <div className="top-bar-right">
-          <span className="select-label" title={t.speechLang}>🎤</span>
+          <span className="select-label" title={t.speechLang}><Mic /></span>
           <select
             className="select-neo"
             value={language}
@@ -215,17 +220,20 @@ function App() {
             ))}
           </select>
 
-          <span className="select-label" title={t.uiLang}>🌐</span>
+          <span className="toolbar-divider" />
+
+          <span className="select-label" title={t.uiLang}><Globe /></span>
           {UI_LANGUAGES.map((l) => (
             <button
               key={l.code}
-              className={`btn-neo${uiLocale === l.code ? ' active' : ''}`}
+              className={`btn-neo lang-pill${uiLocale === l.code ? ' active' : ''}`}
               onClick={() => setUiLocale(l.code)}
-              style={{ padding: '4px 8px', fontSize: '1rem' }}
             >
               {l.label}
             </button>
           ))}
+
+          <span className="toolbar-divider" />
 
           <span className="token-badge">{tokenCount} {t.tokens}</span>
 
@@ -237,7 +245,7 @@ function App() {
           <span className={`connection-dot ${isConnected ? 'on' : 'off'}`} title={isConnected ? t.connected : t.disconnected} />
 
           <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
-            {theme === 'dark' ? '☀️' : '🌙'}
+            {theme === 'dark' ? <Sun /> : <Moon />}
           </button>
         </div>
       </header>
@@ -247,14 +255,14 @@ function App() {
         {/* Summary Card */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">{t.summary}</span>
+            <span className="card-title"><FileText /> {t.summary}</span>
             <div className="translate-controls">
               <select
                 className="select-neo select-sm"
                 value={translateTarget}
                 onChange={(e) => { setTranslateTarget(e.target.value); setTranslatedSummary(''); }}
               >
-                <option value="">🌐 {t.translateTo || 'Translate'}</option>
+                <option value="">{t.translateTo || 'Translate'}</option>
                 {SPEECH_LANGUAGES.filter(l => l.code !== language).map((l) => (
                   <option key={l.code} value={l.code}>{l.label}</option>
                 ))}
@@ -263,8 +271,9 @@ function App() {
                 className="btn-neo btn-sm"
                 onClick={handleTranslate}
                 disabled={!translateTarget || !summary || isTranslating}
+                title={t.translateTo || 'Translate'}
               >
-                {isTranslating ? '⏳' : '🔄'}
+                {isTranslating ? <Loader2 className="spin" /> : <RefreshCw />}
               </button>
             </div>
           </div>
@@ -289,7 +298,7 @@ function App() {
         {/* Q&A Card */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">{t.qa}</span>
+            <span className="card-title"><MessagesSquare /> {t.qa}</span>
           </div>
           <div className="card-body">
             {questions.length === 0 && <p className="qa-empty">{t.noQuestions}</p>}
@@ -322,7 +331,7 @@ function App() {
       <div className="transcript-drawer">
         <button className="transcript-toggle" onClick={() => setShowTranscript(!showTranscript)}>
           <span>{showTranscript ? t.hideTranscript : t.showTranscript} ({transcriptLines.length})</span>
-          <span>{showTranscript ? '▼' : '▲'}</span>
+          {showTranscript ? <ChevronDown /> : <ChevronUp />}
         </button>
         {showTranscript && (
           <div className="transcript-content">

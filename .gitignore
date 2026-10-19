@@ -3,6 +3,11 @@
 Thumbs.db
 .vscode/
 .idea/
+~$*.pptx
+
+# Local presentation exports
+docs/presentations/**/*.pdf
+docs/presentations/**/*.pptx
 
 # Root env (personal tunnel/app config)
 .env

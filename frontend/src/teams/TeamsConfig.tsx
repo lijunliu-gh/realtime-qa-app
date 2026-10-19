@@ -24,11 +24,24 @@ export default function TeamsConfig() {
   }, []);
 
   return (
-    <div style={{ padding: '2rem', textAlign: 'center', color: '#fff' }}>
-      <h2>RealtimeQA</h2>
-      <p>Click "Save" to add the Real-time Q&A panel to your meeting.</p>
-      <p style={{ color: '#aaa', fontSize: '0.9rem' }}>
-        During the meeting, open the side panel to see live Q&A with
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '2.5rem 2rem',
+        textAlign: 'center',
+        fontFamily: "'Segoe UI', system-ui, sans-serif",
+        color: 'var(--text-primary, #242424)',
+      }}
+    >
+      <h2 style={{ color: 'var(--brand, #5b5fc7)', fontWeight: 600 }}>RealtimeQA</h2>
+      <p style={{ color: 'var(--text-secondary, #4d4d4d)' }}>
+        Click "Save" to add the Real-time Q&amp;A panel to your meeting.
+      </p>
+      <p style={{ color: 'var(--text-dim, #8a8a8a)', fontSize: '0.9rem', maxWidth: 420 }}>
+        During the meeting, open the side panel to see live Q&amp;A with
         Microsoft Learn citations.
       </p>
     </div>

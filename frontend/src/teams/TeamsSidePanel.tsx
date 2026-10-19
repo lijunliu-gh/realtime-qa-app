@@ -7,6 +7,10 @@
  */
 import { useState, useCallback, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import {
+  Play, Square, Search, FileDown, Trash2, Mic,
+  RefreshCw, Loader2, FileText, MessagesSquare, ChevronUp, ChevronDown, Sun, Moon,
+} from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useTeamsTranscript } from '../hooks/useTeamsTranscript';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
@@ -44,6 +48,7 @@ export default function TeamsSidePanel() {
   const [translateTarget, setTranslateTarget] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [language, setLanguage] = useState('ja-JP');
+  const [theme, setTheme] = useState<'dark' | 'light'>('light');
 
   const t = getMessages(uiLocale);
 
@@ -191,6 +196,13 @@ export default function TeamsSidePanel() {
     sendMessage({ type: 'request_translate', target: translateTarget });
   };
 
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    if (next === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.removeAttribute('data-theme');
+  };
+
   return (
     <div className="app teams-sidepanel">
       {/* Compact header for side panel */}
@@ -203,18 +215,18 @@ export default function TeamsSidePanel() {
           {useFallback ? (
             /* Speech SDK fallback controls */
             !isRunning ? (
-              <button className="btn-neo active" onClick={handleStart}>▶ {t.start}</button>
+              <button className="btn-neo active" onClick={handleStart}><Play /> {t.start}</button>
             ) : (
-              <button className="btn-neo danger" onClick={handleStop}>■ {t.stop}</button>
+              <button className="btn-neo danger" onClick={handleStop}><Square /> {t.stop}</button>
             )
           ) : (
-            <span className="btn-neo active" style={{ cursor: 'default' }}>🎤 Captions Active</span>
+            <span className="btn-neo active" style={{ cursor: 'default' }}><Mic /> Captions Active</span>
           )}
           <button className="btn-neo" onClick={handleRequestQuestions}>
-            🔍 {t.extractQuestions}
+            <Search /> {t.extractQuestions}
           </button>
-          <button className="btn-neo" onClick={handleExport}>📄 {t.export}</button>
-          <button className="btn-neo" onClick={handleClear} disabled={isRunning}>🗑 {t.clear}</button>
+          <button className="btn-neo" onClick={handleExport}><FileDown /> {t.export}</button>
+          <button className="btn-neo" onClick={handleClear} disabled={isRunning}><Trash2 /> {t.clear}</button>
         </div>
         <div className="top-bar-right">
           <select
@@ -229,20 +241,22 @@ export default function TeamsSidePanel() {
           {UI_LANGUAGES.map((l) => (
             <button
               key={l.code}
-              className={`btn-neo btn-sm${uiLocale === l.code ? ' active' : ''}`}
+              className={`btn-neo btn-sm lang-pill${uiLocale === l.code ? ' active' : ''}`}
               onClick={() => setUiLocale(l.code)}
-              style={{ padding: '2px 6px', fontSize: '0.9rem' }}
             >
               {l.label}
             </button>
           ))}
           <span className="token-badge">{tokenCount} {t.tokens}</span>
+          <button className="theme-toggle" onClick={toggleTheme} title="Toggle theme">
+            {theme === 'dark' ? <Sun /> : <Moon />}
+          </button>
         </div>
       </header>
 
       {/* Status indicators */}
       {useFallback && (
-        <div className="teams-error">🎤 Teams字幕API未対応 — Speech SDK（マイク）モードで動作中</div>
+        <div className="teams-error"><Mic size={14} style={{ verticalAlign: '-2px' }} /> Teams字幕API未対応 — Speech SDK（マイク）モードで動作中</div>
       )}
 
       {/* Main Content — same as standalone */}
@@ -250,14 +264,14 @@ export default function TeamsSidePanel() {
         {/* Summary Card */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">{t.summary}</span>
+            <span className="card-title"><FileText /> {t.summary}</span>
             <div className="translate-controls">
               <select
                 className="select-neo select-sm"
                 value={translateTarget}
                 onChange={(e) => { setTranslateTarget(e.target.value); setTranslatedSummary(''); }}
               >
-                <option value="">🌐 {t.translateTo}</option>
+                <option value="">{t.translateTo}</option>
                 {SPEECH_LANGUAGES.filter(l => l.code !== language).map((l) => (
                   <option key={l.code} value={l.code}>{l.label}</option>
                 ))}
@@ -266,8 +280,9 @@ export default function TeamsSidePanel() {
                 className="btn-neo btn-sm"
                 onClick={handleTranslate}
                 disabled={!translateTarget || !summary || isTranslating}
+                title={t.translateTo}
               >
-                {isTranslating ? '⏳' : '🔄'}
+                {isTranslating ? <Loader2 className="spin" /> : <RefreshCw />}
               </button>
             </div>
           </div>
@@ -292,7 +307,7 @@ export default function TeamsSidePanel() {
         {/* Q&A Card */}
         <div className="card">
           <div className="card-header">
-            <span className="card-title">{t.qa}</span>
+            <span className="card-title"><MessagesSquare /> {t.qa}</span>
           </div>
           <div className="card-body">
             {questions.length === 0 && <p className="qa-empty">{t.noQuestions}</p>}
@@ -334,7 +349,7 @@ export default function TeamsSidePanel() {
           <span>
             {showTranscript ? t.hideTranscript : t.showTranscript} ({transcriptLines.length})
           </span>
-          <span>{showTranscript ? '▼' : '▲'}</span>
+          {showTranscript ? <ChevronDown /> : <ChevronUp />}
         </button>
         {showTranscript && (
           <div className="transcript-content">
